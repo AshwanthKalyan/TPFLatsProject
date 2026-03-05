@@ -20,12 +20,21 @@ export default function Profile() {
 
   useEffect(() => {
     if (user) {
+
+      let skillsString = "";
+
+      if (Array.isArray(user.skills)) {
+        skillsString = user.skills.join(", ");
+      } else if (typeof user.skills === "string") {
+        skillsString = user.skills;
+      }
+
       setFormData({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         department: user.department || "",
-        year: user.year?.toString() || "",
-        skills: user.skills?.join(", ") || "",
+        year: user.year ? user.year.toString() : "",
+        skills: skillsString,
         bio: user.bio || "",
         resumeUrl: user.resumeUrl || "",
         githubUrl: user.githubUrl || "",

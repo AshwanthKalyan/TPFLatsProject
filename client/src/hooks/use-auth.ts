@@ -31,7 +31,11 @@ export function useAuth() {
     queryKey: ["/api/me"],
     queryFn: fetchUser,
     retry: false,
-    staleTime: 1000 * 60 * 5,
+
+    // ✅ ensures fresh data from backend
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const logoutMutation = useMutation({

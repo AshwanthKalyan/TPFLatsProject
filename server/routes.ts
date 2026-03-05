@@ -2,9 +2,9 @@ import { Express } from "express";
 import { Server } from "http";
 import nodemailer from "nodemailer";
 import { pool } from "./db";  
+import { storage } from "./storage";
 
 const otpStore: Record<string, string> = {};
-
 
 
 // EMAIL TRANSPORTER
@@ -92,7 +92,6 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
     try {
 
-      // SAVE USER IN DATABASE
       await pool.query(
         "INSERT INTO users (id,email) VALUES ($1,$2) ON CONFLICT (id) DO NOTHING",
         [rollno, email]
@@ -154,10 +153,111 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   })
 
 
-  // TEST PROTECTED ROUTE
-  app.get("/api/me", isAuthenticated, (req: any, res) => {
+  // =========================
+  // GET USER PROFILE (FIXED)
+  // =========================
+  app.get("/api/me", isAuthenticated, async (req: any, res) => {
 
-    res.json(req.user)
+    try {
+
+      const result = await pool.query(
+        `SELECT 
+          id,
+          email,
+          first_name,
+          last_name,
+          department,
+          year_of_study,
+          skills,
+          bio,
+          github_url,
+          resume_url
+        FROM users
+        WHERE id=$1`,
+        [req.user.id]
+      )
+
+      const user = result.rows[0]
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" })
+      }
+
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        department: user.department,
+        year: user.year_of_study,
+        skills: user.skills,
+        bio: user.bio,
+        githubUrl: user.github_url,
+        resumeUrl: user.resume_url
+      })
+
+    } catch (err) {
+
+      console.error(err)
+      res.status(500).json({ message: "Failed to fetch user" })
+
+    }
+
+  })
+
+
+  // =========================
+  // UPDATE USER PROFILE
+  // =========================
+  app.put("/api/users/profile", isAuthenticated, async (req: any, res: any) => {
+
+    try {
+
+      const userId = req.user.id
+
+      const {
+        firstName,
+        lastName,
+        department,
+        year,
+        skills,
+        bio,
+        githubUrl,
+        resumeUrl
+      } = req.body
+
+      await pool.query(
+        `UPDATE users 
+        SET first_name=$1,
+            last_name=$2,
+            department=$3,
+            year_of_study=$4,
+            skills=$5,
+            bio=$6,
+            github_url=$7,
+            resume_url=$8
+        WHERE id=$9`,
+        [
+          firstName,
+          lastName,
+          department,
+          year,
+          skills,
+          bio,
+          githubUrl,
+          resumeUrl,
+          userId
+        ]
+      )
+
+      res.json({ message: "Profile updated successfully" })
+
+    } catch (error) {
+
+      console.error(error)
+      res.status(500).json({ message: "Failed to update profile" })
+
+    }
 
   })
 
