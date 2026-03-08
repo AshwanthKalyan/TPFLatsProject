@@ -203,13 +203,23 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
     }
 
-  })
+  }) 
+
+  //TEST ROUTE
+
+  app.post("/api/test",(req,res) => {
+    console.log("Backend firing from test route");
+    res.json({ok:true});
+  });
 
 
   // =========================
   // UPDATE USER PROFILE
   // =========================
   app.put("/api/users/profile", isAuthenticated, async (req: any, res: any) => {
+
+    console.log("API HIT!");
+    console.log("body : ",req.body);
 
     try {
 
@@ -265,28 +275,51 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   // CREATE PROJECT
   // =========================
   app.post("/api/projects", isAuthenticated, async (req: any, res: any) => {
-
     try {
-
       const userId = req.user.id;
-      const { title, description } = req.body;
+
+      const {
+        title,
+        description,
+        tech_stack,
+        skills_required,
+        collaborators_needed,
+        project_type,
+        duration,
+        contact_info,
+        required_skills,
+        comms_link,
+        members_needed
+      } = req.body;
+
+      console.log(req.body);
 
       const result = await pool.query(
-        `INSERT INTO projects (title, description, owner_id)
-        VALUES ($1,$2,$3)
+        `INSERT INTO projects
+        (title, description, owner_id, tech_stack, skills_required, collaborators_needed, project_type, duration, contact_info, required_skills, comms_link, members_needed)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
         RETURNING *`,
-        [title, description, userId]
+        [
+          title,
+          description,
+          userId,
+          tech_stack,
+          skills_required,
+          collaborators_needed,
+          project_type,
+          duration,
+          contact_info,
+          required_skills,
+          comms_link,
+          members_needed
+        ]
       );
 
       res.json(result.rows[0]);
-
     } catch (error) {
-
       console.error(error);
       res.status(500).json({ message: "Failed to create project" });
-
     }
-
   });
 
   // =========================

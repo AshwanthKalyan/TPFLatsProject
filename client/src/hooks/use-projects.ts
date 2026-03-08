@@ -64,31 +64,40 @@ enabled: !!id,
 /* ---------------- CREATE PROJECT ---------------- */
 
 export function useCreateProject() {
-const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-return useMutation({
-mutationFn: async (data: any) => {
-const res = await fetch("/api/projects", {
-method: "POST",
-credentials: "include",
-headers: {
-"Content-Type": "application/json",
-},
-body: JSON.stringify(data),
-});
+  return useMutation({
+    mutationFn: async (data: any) => {
+      console.log("Sending to backend:", data);
 
-  if (!res.ok) {
-    throw new Error("Failed to create project");
-  }
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-  return res.json();
-},
+      const result = await res.json();
 
-onSuccess: () => {
-  queryClient.invalidateQueries({
-    queryKey: ["/api/projects"],
+      if (!res.ok) {
+        throw new Error(result.message || "Failed to create project");
+      }
+
+      return result;
+    },
+
+    onSuccess: () => {
+      console.log("Project created successfully");
+
+      queryClient.invalidateQueries({
+        queryKey: ["/api/projects"],
+      });
+    },
+
+    onError: (error) => {
+      console.error("Create project error:", error);
+    },
   });
-},
-
-});
 }

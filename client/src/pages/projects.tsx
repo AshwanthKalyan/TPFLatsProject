@@ -4,7 +4,6 @@ import { Plus, Search, Terminal } from "lucide-react";
 import { useState } from "react";
 
 export default function Projects() {
-
   const { data: projects, isLoading } = useProjects();
   const createProject = useCreateProject();
 
@@ -21,34 +20,43 @@ export default function Projects() {
 
   const filteredProjects = projects?.filter((p: any) =>
     p.title?.toLowerCase().includes(search.toLowerCase()) ||
-    p.techStack?.some((t: string) =>
+    p.tech_stack?.some((t: string) =>
       t.toLowerCase().includes(search.toLowerCase())
     )
   );
 
-  // ========================
-  // CREATE PROJECT FUNCTION
-  // ========================
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
-
     e.preventDefault();
 
     const fd = new FormData(e.currentTarget);
 
+    const tech_stack = (fd.get("techStack") as string)
+      ?.split(",")
+      .map((s) => s.trim());
+
+    const skills_required = (fd.get("skillsRequired") as string)
+      ?.split(",")
+      .map((s) => s.trim());
+
+    const collaborators_needed = Number(fd.get("collaboratorsNeeded"));
+
     const data = {
       title: fd.get("title") as string,
       description: fd.get("description") as string,
-      techStack: (fd.get("techStack") as string)
-        ?.split(",")
-        .map((s) => s.trim()),
-      skillsRequired: (fd.get("skillsRequired") as string)
-        ?.split(",")
-        .map((s) => s.trim()),
-      collaboratorsNeeded: Number(fd.get("collaboratorsNeeded")),
-      projectType: fd.get("projectType") as string,
+      tech_stack,
+      skills_required,
+      collaborators_needed,
+      project_type: fd.get("projectType") as string,
       duration: fd.get("duration") as string,
-      contactInfo: fd.get("contactInfo") as string,
+      contact_info: fd.get("contactInfo") as string,
+
+      // duplicates required by backend table
+      required_skills: skills_required,
+      comms_link: fd.get("contactInfo") as string,
+      members_needed: collaborators_needed,
     };
+
+    console.log("sending data:", data);
 
     createProject.mutate(data, {
       onSuccess: () => {
@@ -59,7 +67,6 @@ export default function Projects() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -95,70 +102,38 @@ export default function Projects() {
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="bg-card border-2 border-primary p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto brutal-shadow">
-
             <h2 className="text-2xl font-display text-primary uppercase mb-6 border-b-2 border-primary/20 pb-4">
               Initialize New Project
             </h2>
 
             <form onSubmit={handleCreate} className="space-y-4 font-mono">
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground uppercase">
-                    Project Title
-                  </label>
-                  <input name="title" required className="w-full bg-background border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary transition-all" />
-                </div>
+                <input name="title" required placeholder="Title"
+                className="border p-3 bg-background border-primary/30"/>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground uppercase">
-                    Type
-                  </label>
-                  <input name="projectType" required className="w-full bg-background border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary transition-all" />
-                </div>
+                <input name="projectType" required placeholder="Type"
+                className="border p-3 bg-background border-primary/30"/>
 
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm text-muted-foreground uppercase">
-                    Description
-                  </label>
-                  <textarea name="description" required rows={3} className="w-full bg-background border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary transition-all" />
-                </div>
+                <textarea name="description" required rows={3}
+                placeholder="Description"
+                className="border p-3 bg-background border-primary/30"/>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground uppercase">
-                    Tech Stack
-                  </label>
-                  <input name="techStack" required placeholder="React, Node, PostgreSQL" className="w-full bg-background border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary transition-all" />
-                </div>
+                <input name="techStack" required placeholder="React, Node"
+                className="border p-3 bg-background border-primary/30"/>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground uppercase">
-                    Skills Required
-                  </label>
-                  <input name="skillsRequired" required placeholder="Frontend, UI/UX" className="w-full bg-background border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary transition-all" />
-                </div>
+                <input name="skillsRequired" required placeholder="Frontend"
+                className="border p-3 bg-background border-primary/30"/>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground uppercase">
-                    Collaborators Needed
-                  </label>
-                  <input name="collaboratorsNeeded" type="number" min="1" required className="w-full bg-background border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary transition-all" />
-                </div>
+                <input name="collaboratorsNeeded" type="number" min="1" required
+                placeholder="Members"
+                className="border p-3 bg-background border-primary/30"/>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-muted-foreground uppercase">
-                    Duration
-                  </label>
-                  <input name="duration" required placeholder="3 weeks" className="w-full bg-background border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary transition-all" />
-                </div>
+                <input name="duration" required placeholder="3 weeks"
+                className="border p-3 bg-background border-primary/30"/>
 
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm text-muted-foreground uppercase">
-                    Contact Info
-                  </label>
-                  <input name="contactInfo" required placeholder="Discord or Email" className="w-full bg-background border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary transition-all" />
-                </div>
+                <input name="contactInfo" required placeholder="Discord"
+                className="border p-3 bg-background border-primary/30"/>
 
               </div>
 
@@ -166,7 +141,7 @@ export default function Projects() {
                 <button
                   type="button"
                   onClick={() => setShowCreate(false)}
-                  className="px-6 py-2 border border-primary/50 text-muted-foreground hover:text-foreground hover:border-primary transition-all uppercase tracking-wider"
+                  className="px-6 py-2 border border-primary/50"
                 >
                   Cancel
                 </button>
@@ -174,99 +149,27 @@ export default function Projects() {
                 <button
                   type="submit"
                   disabled={createProject.isPending}
-                  className="px-6 py-2 bg-primary text-background font-bold hover:bg-white transition-all brutal-shadow uppercase tracking-wider disabled:opacity-50"
+                  className="px-6 py-2 bg-primary text-background"
                 >
                   {createProject.isPending ? "Deploying..." : "Deploy Project"}
                 </button>
               </div>
-
             </form>
-
           </div>
         </div>
       )}
 
       {/* PROJECT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-
-        {filteredProjects?.map((project: any, i: number) => (
-
-          <Link key={project.id} href={`/projects/${project.id}`} className="group block">
-
-            <div
-              className="h-full border-2 border-primary/20 bg-card p-6 transition-all duration-300 group-hover:border-primary brutal-shadow-hover relative overflow-hidden"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-
-              <div className="absolute top-0 right-0 bg-primary/10 text-primary border-l-2 border-b-2 border-primary/20 px-3 py-1 text-xs font-mono font-bold">
-                {project.projectType}
-              </div>
-
-              <h3 className="text-2xl font-display text-foreground mb-3 pr-16 truncate">
-                {project.title}
-              </h3>
-
-              <p className="text-muted-foreground text-sm line-clamp-2 mb-6 font-mono">
-                {project.description}
-              </p>
-
-              <div className="space-y-4">
-
-                <div>
-
-                  <div className="text-xs text-primary/60 uppercase mb-2">
-                    Stack
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-
-                    {(project.techStack || []).slice(0,3).map((tech: string) => (
-                      <span key={tech} className="bg-background border border-primary/30 px-2 py-1 text-xs text-primary font-mono">
-                        {tech}
-                      </span>
-                    ))}
-
-                    {(project.techStack || []).length > 3 && (
-                      <span className="bg-background border border-primary/30 px-2 py-1 text-xs text-muted-foreground font-mono">
-                        +{project.techStack.length - 3}
-                      </span>
-                    )}
-
-                  </div>
-
-                </div>
-
-                <div className="flex justify-between items-end border-t border-primary/10 pt-4 mt-4">
-
-                  <div className="text-xs text-muted-foreground">
-                    <span className="text-foreground">
-                      {project.collaboratorsNeeded}
-                    </span>{" "}
-                    needed
-                  </div>
-
-                  <div className="text-xs text-primary font-bold tracking-widest">
-                    VIEW DATA_
-                  </div>
-
-                </div>
-
-              </div>
-
+        {filteredProjects?.map((project: any) => (
+          <Link key={project.id} href={`/projects/${project.id}`}>
+            <div className="border p-6">
+              <h3>{project.title}</h3>
+              <p>{project.description}</p>
             </div>
-
           </Link>
-
         ))}
-
-        {filteredProjects?.length === 0 && (
-          <div className="col-span-full border-2 border-dashed border-primary/20 p-12 text-center text-muted-foreground font-mono">
-            NO SYSTEMS MATCH YOUR QUERY.
-          </div>
-        )}
-
       </div>
-
     </div>
   );
 }
