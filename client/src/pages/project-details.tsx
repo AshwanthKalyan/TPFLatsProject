@@ -1,12 +1,20 @@
-import { useProject } from "@/hooks/use-projects";
+import { useProject, useDeleteProject, useUpdateProject } from "@/hooks/use-projects";
 import {
   useProjectApplications,
   useCreateApplication,
   useUpdateApplicationStatus,
 } from "@/hooks/use-applications";
 import { useAuth } from "@/hooks/use-auth";
-import { useRoute, Link } from "wouter";
-import { Terminal, ArrowLeft, Send, CheckCircle, XCircle } from "lucide-react";
+import { useRoute, Link, useLocation } from "wouter";
+import {
+  Terminal,
+  ArrowLeft,
+  Send,
+  CheckCircle,
+  XCircle,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 
 export default function ProjectDetails() {
@@ -20,8 +28,13 @@ export default function ProjectDetails() {
 
   const applyMutation = useCreateApplication(projectId);
   const updateStatusMutation = useUpdateApplicationStatus();
+  const deleteMutation = useDeleteProject();
+  const updateMutation = useUpdateProject();
+
+  const [, setLocation] = useLocation();
 
   const [showApply, setShowApply] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   if (isLoading) {
     return (
@@ -34,16 +47,45 @@ export default function ProjectDetails() {
   if (!project) {
     return (
       <div className="text-primary font-mono text-xl">
-        ERROR 404: DATA NOT FOUND
+        ERROR 404: PROJECT NOT FOUND
       </div>
     );
   }
 
-  const isCreator = user?.id === project.creatorId;
+  const isCreator = user?.id === project.owner_id;
 
   const hasApplied = applications?.some(
     (a: any) => a.applicantId === user?.id
   );
+
+  /* ---------------- DELETE PROJECT ---------------- */
+
+
+  const handleDelete = () => {
+    console.log("Delete button clicked");
+
+    if (!confirm("Are you sure you want to delete this project?")) {
+      console.log("User cancelled delete");
+      return;
+    }
+
+    console.log("Project ID being sent:", project.id);
+    console.log("Delete mutation object:", deleteMutation);
+
+    deleteMutation.mutate(project.id, {
+      onSuccess: (data) => {
+        console.log("Delete success:", data);
+        setLocation("/projects");
+      },
+      onError: (error) => {
+        console.error("Delete failed:", error);
+      },
+      onSettled: (data, error) => {
+        console.log("Mutation settled:", { data, error });
+      }
+    });
+  };
+  /* ---------------- APPLY ---------------- */
 
   const handleApply = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,43 +103,89 @@ export default function ProjectDetails() {
     );
   };
 
+  /* ---------------- UPDATE PROJECT ---------------- */
+
+  const handleEdit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const fd = new FormData(e.currentTarget);
+
+    updateMutation.mutate(
+      {
+        id: project.id,
+        title: fd.get("title"),
+        description: fd.get("description"),
+        duration: fd.get("duration"),
+        comms_link: fd.get("comms_link"),
+      },
+      {
+        onSuccess: () => setEditing(false),
+      }
+    );
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-4xl">
+    <div className="space-y-8 max-w-4xl mx-auto">
+
       {/* BACK BUTTON */}
 
       <Link
         href="/projects"
-        className="inline-flex items-center gap-2 text-primary hover:text-white font-mono uppercase tracking-wider transition-colors"
+        className="inline-flex items-center gap-2 text-primary hover:text-white"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to grid
+        <ArrowLeft className="h-4 w-4" /> Back to projects
       </Link>
 
       {/* PROJECT CARD */}
 
-      <div className="border-2 border-primary bg-card p-6 md:p-8 brutal-shadow relative">
-        <div className="absolute top-0 right-0 bg-primary text-background px-4 py-2 font-display font-bold text-sm tracking-widest">
-          {project.projectType}
+      <div className="border-2 border-primary p-6 relative">
+
+        <div className="absolute top-0 right-0 bg-primary text-black px-4 py-1 text-sm">
+          {project.project_type}
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-display text-foreground uppercase tracking-tighter mb-4 pr-24">
-          {project.title}
-        </h1>
+        <h1 className="text-4xl font-bold mb-4">{project.title}</h1>
+
+        {/* OWNER CONTROLS */}
+
+        {isCreator && (
+          <div className="flex gap-3 mb-6">
+
+            <button
+              onClick={() => setEditing(true)}
+              className="border border-primary px-4 py-2 flex items-center gap-2 hover:bg-primary hover:text-black"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </button>
+
+            <button
+              onClick={handleDelete}
+              className="border border-red-500 text-red-500 px-4 py-2 flex items-center gap-2 hover:bg-red-500 hover:text-white"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </button>
+
+          </div>
+        )}
 
         {/* PROJECT META */}
 
-        <div className="flex items-center gap-4 mb-8 text-sm font-mono text-muted-foreground border-b border-primary/20 pb-6">
+        <div className="flex gap-4 mb-6 text-sm border-b pb-4">
+
           <span>
-            CREATOR:
-            <span className="text-foreground ml-1">
-              {project.creatorId}
+            Creator:
+            <span className="ml-2 font-bold">
+              {project.owner_id}
             </span>
           </span>
 
           <span>•</span>
 
           <span>
-            DURATION:
-            <span className="text-foreground ml-1">
+            Duration:
+            <span className="ml-2 font-bold">
               {project.duration}
             </span>
           </span>
@@ -105,238 +193,267 @@ export default function ProjectDetails() {
           <span>•</span>
 
           <span>
-            NEEDED:
-            <span className="text-primary font-bold ml-1">
-              {project.collaboratorsNeeded}
+            Members Needed:
+            <span className="ml-2 text-primary font-bold">
+              {project.members_needed || project.collaborators_needed}
             </span>
           </span>
+
         </div>
 
         {/* DESCRIPTION */}
 
-        <div className="space-y-8 font-mono">
+        <div className="space-y-6">
+
           <div>
-            <h3 className="text-primary uppercase tracking-widest text-sm mb-3">
-              System Description
+            <h3 className="text-primary text-sm uppercase mb-1">
+              Description
             </h3>
 
-            <p className="text-foreground text-lg leading-relaxed whitespace-pre-wrap">
+            <p className="whitespace-pre-wrap">
               {project.description}
             </p>
           </div>
 
-          {/* STACK + SKILLS */}
+          {/* TECH STACK */}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-primary uppercase tracking-widest text-sm mb-3">
-                Tech Stack
-              </h3>
+          <div>
+            <h3 className="text-primary text-sm uppercase mb-1">
+              Tech Stack
+            </h3>
 
-              <div className="flex flex-wrap gap-2">
-                {project.techStack?.map((tech: string) => (
-                  <span
-                    key={tech}
-                    className="border border-primary/50 bg-background px-3 py-1.5 text-sm"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {project.tech_stack?.map((tech: string) => (
+                <span key={tech} className="border px-3 py-1 text-sm">
+                  {tech}
+                </span>
+              ))}
             </div>
+          </div>
 
-            <div>
-              <h3 className="text-primary uppercase tracking-widest text-sm mb-3">
-                Required Skills
-              </h3>
+          {/* SKILLS */}
 
-              <div className="flex flex-wrap gap-2">
-                {project.skillsRequired?.map((skill: string) => (
-                  <span
-                    key={skill}
-                    className="border border-secondary/50 bg-background text-secondary px-3 py-1.5 text-sm"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
+          <div>
+            <h3 className="text-primary text-sm uppercase mb-1">
+              Required Skills
+            </h3>
+
+            <div className="flex flex-wrap gap-2">
+              {project.skills_required?.map((skill: string) => (
+                <span key={skill} className="border px-3 py-1 text-sm">
+                  {skill}
+                </span>
+              ))}
             </div>
           </div>
 
           {/* CONTACT */}
 
           <div>
-            <h3 className="text-primary uppercase tracking-widest text-sm mb-3">
-              Comms Link
+            <h3 className="text-primary text-sm uppercase mb-1">
+              Communication Link
             </h3>
 
-            <div className="bg-background border border-primary/20 p-4 font-mono text-foreground inline-block">
-              {project.contactInfo}
+            <div className="border p-3">
+              {project.comms_link || project.contact_info}
             </div>
           </div>
+
         </div>
 
         {/* APPLY BUTTON */}
 
         {!isCreator && !hasApplied && !showApply && (
-          <div className="mt-12 pt-8 border-t border-primary/20 flex justify-end">
+          <div className="mt-8 flex justify-end">
             <button
               onClick={() => setShowApply(true)}
-              className="bg-primary text-background px-8 py-4 font-display font-bold uppercase tracking-widest text-xl hover:bg-white transition-colors brutal-shadow flex items-center gap-3"
+              className="bg-primary text-black px-6 py-2 flex items-center gap-2"
             >
-              <Send className="h-6 w-6" /> Transmit Application
+              <Send className="h-4 w-4" />
+              Apply
             </button>
           </div>
         )}
 
-        {/* APPLIED STATUS */}
-
         {hasApplied && !isCreator && (
-          <div className="mt-12 pt-8 border-t border-primary/20 text-right">
-            <div className="inline-block border-2 border-primary/50 text-primary px-6 py-3 font-mono font-bold tracking-widest">
-              APPLICATION TRANSMITTED. AWAITING RESPONSE.
+          <div className="mt-8 text-right">
+            <div className="border px-4 py-2 inline-block">
+              APPLICATION SENT
             </div>
           </div>
         )}
+
       </div>
 
-      {/* APPLY FORM */}
+      {/* EDIT FORM */}
 
-      {showApply && (
-        <div className="border-2 border-secondary bg-card p-6 brutal-shadow-secondary animate-in slide-in-from-top-4">
-          <h2 className="text-2xl font-display text-secondary uppercase mb-6">
-            Transmit Credentials
-          </h2>
+      {editing && (
+        <div className="border p-6">
 
-          <form onSubmit={handleApply} className="space-y-4 font-mono">
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground uppercase">
-                Resume URL (Optional)
-              </label>
+          <h2 className="text-xl mb-4">Edit Project</h2>
 
-              <input
-                name="resumeUrl"
-                placeholder="https://..."
-                className="w-full bg-background border border-secondary/30 p-3 text-foreground focus:outline-none focus:border-secondary transition-colors"
-              />
-            </div>
+          <form onSubmit={handleEdit} className="space-y-4">
 
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground uppercase">
-                Transmission Message
-              </label>
+            <input
+              name="title"
+              defaultValue={project.title}
+              className="w-full border p-2"
+            />
 
-              <textarea
-                name="message"
-                rows={4}
-                required
-                placeholder="Why you fit this system..."
-                className="w-full bg-background border border-secondary/30 p-3 text-foreground focus:outline-none focus:border-secondary transition-colors"
-              />
-            </div>
+            <textarea
+              name="description"
+              defaultValue={project.description}
+              className="w-full border p-2"
+            />
 
-            <div className="flex justify-end gap-4 pt-4">
+            <input
+              name="duration"
+              defaultValue={project.duration}
+              className="w-full border p-2"
+            />
+
+            <input
+              name="comms_link"
+              defaultValue={project.comms_link}
+              className="w-full border p-2"
+            />
+
+            <div className="flex gap-3">
+
               <button
                 type="button"
-                onClick={() => setShowApply(false)}
-                className="px-6 py-2 text-muted-foreground hover:text-foreground"
+                onClick={() => setEditing(false)}
               >
-                CANCEL
+                Cancel
               </button>
 
               <button
                 type="submit"
-                disabled={applyMutation.isPending}
-                className="bg-secondary text-background px-8 py-3 font-bold brutal-shadow-secondary hover:bg-white disabled:opacity-50 transition-all"
+                className="bg-primary text-black px-6 py-2"
               >
-                {applyMutation.isPending ? "SENDING..." : "SEND"}
+                Save
               </button>
+
             </div>
+
           </form>
+
         </div>
       )}
 
-      {/* CREATOR VIEW APPLICANTS */}
+      {/* APPLY FORM */}
 
-      {isCreator && applications && applications.length > 0 && (
-        <div className="space-y-6">
-          <h2 className="text-3xl font-display text-foreground border-l-4 border-primary pl-4 uppercase">
-            Applicant Data
+      {showApply && (
+        <div className="border p-6">
+
+          <h2 className="text-xl mb-4">Apply</h2>
+
+          <form onSubmit={handleApply} className="space-y-4">
+
+            <input
+              name="resumeUrl"
+              placeholder="Resume URL"
+              className="w-full border p-2"
+            />
+
+            <textarea
+              name="message"
+              required
+              placeholder="Why should we pick you?"
+              className="w-full border p-2"
+            />
+
+            <div className="flex justify-end gap-3">
+
+              <button type="button" onClick={() => setShowApply(false)}>
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                className="bg-primary text-black px-6 py-2"
+              >
+                Send
+              </button>
+
+            </div>
+
+          </form>
+
+        </div>
+      )}
+
+      {/* APPLICANTS (CREATOR ONLY) */}
+
+      {isCreator && applications && applications?.length > 0 && (
+        <div className="space-y-4">
+
+          <h2 className="text-2xl font-bold">
+            Applicants
           </h2>
 
-          <div className="grid grid-cols-1 gap-4">
-            {applications.map((app: any) => (
-              <div
-                key={app.id}
-                className="border border-primary/30 bg-card p-6 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center"
-              >
-                <div className="space-y-2 font-mono flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold text-foreground">
-                      {app?.applicant?.firstName ||
-                        app?.applicant?.email ||
-                        "Unknown"}
-                    </span>
+          {applications.map((app: any) => (
 
-                    <span
-                      className={`px-2 py-0.5 text-xs uppercase border ${
-                        app.status === "accepted"
-                          ? "border-green-500 text-green-500"
-                          : app.status === "rejected"
-                          ? "border-red-500 text-red-500"
-                          : "border-yellow-500 text-yellow-500"
-                      }`}
-                    >
-                      {app.status}
-                    </span>
-                  </div>
+            <div key={app.id} className="border p-4 flex justify-between">
 
-                  <p className="text-muted-foreground">{app.message}</p>
-
-                  {app.resumeUrl && (
-                    <a
-                      href={app.resumeUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary hover:underline block text-sm"
-                    >
-                      [VIEW_RESUME]
-                    </a>
-                  )}
+              <div>
+                <div className="font-bold">
+                  {app?.applicant?.email || "Unknown"}
                 </div>
 
-                {app.status === "pending" && (
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() =>
-                        updateStatusMutation.mutate({
-                          id: app.id,
-                          status: "accepted",
-                        })
-                      }
-                      className="border border-green-500 text-green-500 hover:bg-green-500 hover:text-background px-4 py-2 flex items-center gap-2 font-mono font-bold transition-colors"
-                    >
-                      <CheckCircle className="h-4 w-4" /> ACCEPT
-                    </button>
+                <p>{app.message}</p>
 
-                    <button
-                      onClick={() =>
-                        updateStatusMutation.mutate({
-                          id: app.id,
-                          status: "rejected",
-                        })
-                      }
-                      className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-background px-4 py-2 flex items-center gap-2 font-mono font-bold transition-colors"
-                    >
-                      <XCircle className="h-4 w-4" /> REJECT
-                    </button>
-                  </div>
+                {app.resumeUrl && (
+                  <a
+                    href={app.resumeUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-500"
+                  >
+                    View Resume
+                  </a>
                 )}
               </div>
-            ))}
-          </div>
+
+              {app.status === "pending" && (
+
+                <div className="flex gap-2">
+
+                  <button
+                    onClick={() =>
+                      updateStatusMutation.mutate({
+                        id: app.id,
+                        status: "accepted",
+                      })
+                    }
+                    className="text-green-500"
+                  >
+                    <CheckCircle />
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      updateStatusMutation.mutate({
+                        id: app.id,
+                        status: "rejected",
+                      })
+                    }
+                    className="text-red-500"
+                  >
+                    <XCircle />
+                  </button>
+
+                </div>
+
+              )}
+
+            </div>
+
+          ))}
+
         </div>
       )}
+
     </div>
   );
 }

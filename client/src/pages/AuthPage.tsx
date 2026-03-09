@@ -20,6 +20,11 @@ export default function AuthPage() {
 
     const data = await res.json();
 
+    if(data.autoLogin){
+      setLocation("/projects");
+      return;
+    }
+
     if (res.ok) {
       setOtpSent(true);
       alert(data.message || "OTP sent to email");

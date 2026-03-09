@@ -6,7 +6,6 @@ import { storage } from "./storage";
 
 const otpStore: Record<string, string> = {};
 
-
 // EMAIL TRANSPORTER
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -19,10 +18,8 @@ const transporter = nodemailer.createTransport({
 export async function registerRoutes(httpServer: Server, app: Express) {
 
   app.get("/api/test-db", async (req,res)=>{
-
     const result = await pool.query("SELECT NOW()");
     res.json(result.rows);
-
   });
 
   // middleware to check login
@@ -48,6 +45,27 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
     if (!regex.test(email)) {
       return res.status(400).json({ message: "Use NITT email" })
+    }
+
+    const rollno = email.split("@")[0]
+
+    // ⭐ AUTO LOGIN FOR TEST ACCOUNT
+    if (email === "test@nitt.edu") {
+
+      await pool.query(
+        "INSERT INTO users (id,email) VALUES ($1,$2) ON CONFLICT (id) DO NOTHING",
+        [rollno, email]
+      )
+
+      req.session.user = {
+        id: rollno,
+        email
+      }
+
+      return res.json({
+        message: "Auto login success",
+        autoLogin: true
+      })
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
@@ -154,7 +172,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
 
   // =========================
-  // GET USER PROFILE (FIXED)
+  // GET USER PROFILE
   // =========================
   app.get("/api/me", isAuthenticated, async (req: any, res) => {
 
@@ -203,23 +221,13 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
     }
 
-  }) 
-
-  //TEST ROUTE
-
-  app.post("/api/test",(req,res) => {
-    console.log("Backend firing from test route");
-    res.json({ok:true});
-  });
+  })
 
 
   // =========================
   // UPDATE USER PROFILE
   // =========================
   app.put("/api/users/profile", isAuthenticated, async (req: any, res: any) => {
-
-    console.log("API HIT!");
-    console.log("body : ",req.body);
 
     try {
 
@@ -271,13 +279,11 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
   })
 
+
   // =========================
   // CREATE PROJECT
   // =========================
   app.post("/api/projects", isAuthenticated, async (req: any, res: any) => {
-
-    console.log("CREATE PROJECT HIT");
-    console.log("BODY:", req.body);
 
     try {
 
@@ -342,6 +348,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
   });
 
+
   // =========================
   // GET ALL PROJECTS
   // =========================
@@ -364,7 +371,9 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
   });
 
-  //SINGLE PROJECT DETAILS
+  // =========================
+  // SINGLE PROJECT
+  // =========================
   app.get("/api/projects/:id", async (req, res) => {
     const result = await pool.query(
       `SELECT * FROM projects WHERE id=$1`,
