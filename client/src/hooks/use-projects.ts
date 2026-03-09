@@ -1,74 +1,59 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-export interface Project {
-id: number;
-title: string;
-description: string;
-
-techStack: string[];
-skillsRequired: string[];
-collaboratorsNeeded: number;
-
-projectType: string;
-duration: string;
-contactInfo: string;
-
-creatorId: string;
-
-createdAt: string;
-updatedAt: string;
-}
-
 /* ---------------- GET ALL PROJECTS ---------------- */
 
 export function useProjects() {
-return useQuery<Project[]>({
-queryKey: ["/api/projects"],
-queryFn: async () => {
-const res = await fetch("/api/projects", {
-credentials: "include",
-});
+  return useQuery({
+    queryKey: ["/api/projects"],
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch projects");
-  }
+    queryFn: async () => {
+      const res = await fetch("/api/projects", {
+        credentials: "include",
+      });
 
-  return res.json();
-},
+      if (!res.ok) {
+        throw new Error("Failed to fetch projects");
+      }
 
-});
+      return res.json();
+    },
+  });
 }
 
 /* ---------------- GET SINGLE PROJECT ---------------- */
 
 export function useProject(id: number) {
-return useQuery<Project>({
-queryKey: ["/api/projects", id],
-queryFn: async () => {
-const res = await fetch(`/api/projects/${id}`, {
-credentials: "include",
-});
+  return useQuery({
+    queryKey: ["/api/projects", id],
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch project");
-  }
+    queryFn: async () => {
+      const res = await fetch(`/api/projects/${id}`, {
+        credentials: "include",
+      });
 
-  return res.json();
-},
-enabled: !!id,
+      if (!res.ok) {
+        throw new Error("Failed to fetch project");
+      }
 
+      return res.json();
+    },
 
-});
+    enabled: !!id, // prevents query running with id=0
+  });
 }
+
 
 /* ---------------- CREATE PROJECT ---------------- */
 
 export function useCreateProject() {
+
   const queryClient = useQueryClient();
 
   return useMutation({
+
     mutationFn: async (data: any) => {
-      console.log("Sending to backend:", data);
+
+      console.log("Sending project to backend:", data);
 
       const res = await fetch("/api/projects", {
         method: "POST",
@@ -79,25 +64,23 @@ export function useCreateProject() {
         body: JSON.stringify(data),
       });
 
-      const result = await res.json();
-
       if (!res.ok) {
-        throw new Error(result.message || "Failed to create project");
+        throw new Error("Failed to create project");
       }
 
-      return result;
+      return res.json();
     },
 
     onSuccess: () => {
+
       console.log("Project created successfully");
 
       queryClient.invalidateQueries({
         queryKey: ["/api/projects"],
       });
+
     },
 
-    onError: (error) => {
-      console.error("Create project error:", error);
-    },
   });
+
 }

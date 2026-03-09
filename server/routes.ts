@@ -275,7 +275,12 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   // CREATE PROJECT
   // =========================
   app.post("/api/projects", isAuthenticated, async (req: any, res: any) => {
+
+    console.log("CREATE PROJECT HIT");
+    console.log("BODY:", req.body);
+
     try {
+
       const userId = req.user.id;
 
       const {
@@ -292,11 +297,22 @@ export async function registerRoutes(httpServer: Server, app: Express) {
         members_needed
       } = req.body;
 
-      console.log(req.body);
-
       const result = await pool.query(
         `INSERT INTO projects
-        (title, description, owner_id, tech_stack, skills_required, collaborators_needed, project_type, duration, contact_info, required_skills, comms_link, members_needed)
+        (
+          title,
+          description,
+          owner_id,
+          tech_stack,
+          skills_required,
+          collaborators_needed,
+          project_type,
+          duration,
+          contact_info,
+          required_skills,
+          comms_link,
+          members_needed
+        )
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
         RETURNING *`,
         [
@@ -316,10 +332,14 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       );
 
       res.json(result.rows[0]);
+
     } catch (error) {
-      console.error(error);
+
+      console.error("CREATE PROJECT ERROR:", error);
       res.status(500).json({ message: "Failed to create project" });
+
     }
+
   });
 
   // =========================

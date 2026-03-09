@@ -26,43 +26,51 @@ export default function Projects() {
   );
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
+
     e.preventDefault();
 
     const fd = new FormData(e.currentTarget);
 
-    const tech_stack = (fd.get("techStack") as string)
-      ?.split(",")
-      .map((s) => s.trim());
-
-    const skills_required = (fd.get("skillsRequired") as string)
-      ?.split(",")
-      .map((s) => s.trim());
-
-    const collaborators_needed = Number(fd.get("collaboratorsNeeded"));
-
     const data = {
-      title: fd.get("title") as string,
-      description: fd.get("description") as string,
-      tech_stack,
-      skills_required,
-      collaborators_needed,
-      project_type: fd.get("projectType") as string,
-      duration: fd.get("duration") as string,
-      contact_info: fd.get("contactInfo") as string,
 
-      // duplicates required by backend table
-      required_skills: skills_required,
-      comms_link: fd.get("contactInfo") as string,
-      members_needed: collaborators_needed,
+      title: fd.get("title"),
+
+      description: fd.get("description"),
+
+      tech_stack: (fd.get("techStack") as string)
+        ?.split(",")
+        .map((s) => s.trim()),
+
+      skills_required: (fd.get("skillsRequired") as string)
+        ?.split(",")
+        .map((s) => s.trim()),
+
+      collaborators_needed: Number(fd.get("collaboratorsNeeded")),
+
+      project_type: fd.get("projectType"),
+
+      duration: fd.get("duration"),
+
+      contact_info: fd.get("contactInfo"),
+
+      required_skills: (fd.get("skillsRequired") as string)
+        ?.split(",")
+        .map((s) => s.trim()),
+
+      comms_link: fd.get("contactInfo"),
+
+      members_needed: Number(fd.get("collaboratorsNeeded"))
+
     };
 
-    console.log("sending data:", data);
+    console.log("FORM DATA:", data);
 
     createProject.mutate(data, {
       onSuccess: () => {
         setShowCreate(false);
       },
     });
+
   };
 
   return (
