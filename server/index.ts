@@ -9,6 +9,9 @@ import { createServer } from "http";
 const app = express();
 const httpServer = createServer(app);
 
+/* IMPORTANT for Railway / Render proxies */
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -18,6 +21,11 @@ app.use(
     secret: process.env.SESSION_SECRET || "nitt-secret",
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // required for HTTPS
+      httpOnly: true,
+      sameSite: "lax",
+    },
   })
 );
 
@@ -29,10 +37,11 @@ export function log(message: string) {
 
 (async () => {
   try {
+
     /* Register API routes */
     await registerRoutes(httpServer, app);
 
-    /* Environment-based frontend serving */
+    /* Frontend serving */
     if (process.env.NODE_ENV === "production") {
       serveStatic(app);
     } else {
