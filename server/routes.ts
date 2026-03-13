@@ -1,12 +1,9 @@
 import { Express } from "express";
 import { Server } from "http";
-import nodemailer from "nodemailer";
-import { pool } from "./db";  
-import { storage } from "./storage";
-
+import { clerkClient, getAuth } from "@clerk/express";
+import { pool } from "./db";
 
 export async function registerRoutes(httpServer: Server, app: Express) {
-
   console.log("Register Routes HIT!");
 
   const testDbHandler = async (_req: any, res: any) => {
@@ -44,25 +41,22 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
   // middleware to check login
   function isAuthenticated(req: any, res: any, next: any) {
+    const { userId } = getAuth(req);
 
-    if (!req.session.user) {
-      return res.status(401).json({ message: "Not logged in" })
+    if (!userId) {
+      return res.status(401).json({ message: "Not logged in" });
     }
 
-    req.user = req.session.user
-    next()
-
+    req.user = { id: userId };
+    next();
   }
-
 
   // =========================
   // GET USER PROFILE
   // =========================
   app.get("/api/me", isAuthenticated, async (req: any, res) => {
-
     try {
-
-      const result = await pool.query(
+      let result = await pool.query(
         `SELECT 
           id,
           email,
@@ -76,13 +70,53 @@ export async function registerRoutes(httpServer: Server, app: Express) {
           resume_url
         FROM users
         WHERE id=$1`,
-        [req.user.id]
-      )
+        [req.user.id],
+      );
 
-      const user = result.rows[0]
+      let user = result.rows[0];
 
       if (!user) {
-        return res.status(404).json({ message: "User not found" })
+        const clerkUser = await clerkClient.users.getUser(req.user.id);
+        const primaryEmail =
+          clerkUser.emailAddresses?.[0]?.emailAddress || null;
+
+        await pool.query(
+          `INSERT INTO users (id, email, first_name, last_name)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (id) DO UPDATE
+           SET email = EXCLUDED.email,
+               first_name = EXCLUDED.first_name,
+               last_name = EXCLUDED.last_name`,
+          [
+            clerkUser.id,
+            primaryEmail,
+            clerkUser.firstName || null,
+            clerkUser.lastName || null,
+          ],
+        );
+
+        result = await pool.query(
+          `SELECT 
+            id,
+            email,
+            first_name,
+            last_name,
+            department,
+            year_of_study,
+            skills,
+            bio,
+            github_url,
+            resume_url
+          FROM users
+          WHERE id=$1`,
+          [req.user.id],
+        );
+
+        user = result.rows[0];
+      }
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
       }
 
       res.json({
@@ -95,27 +129,20 @@ export async function registerRoutes(httpServer: Server, app: Express) {
         skills: user.skills,
         bio: user.bio,
         githubUrl: user.github_url,
-        resumeUrl: user.resume_url
-      })
-
+        resumeUrl: user.resume_url,
+      });
     } catch (err) {
-
-      console.error(err)
-      res.status(500).json({ message: "Failed to fetch user" })
-
+      console.error(err);
+      res.status(500).json({ message: "Failed to fetch user" });
     }
-
-  })
-
+  });
 
   // =========================
   // UPDATE USER PROFILE
   // =========================
   app.put("/api/users/profile", isAuthenticated, async (req: any, res: any) => {
-
     try {
-
-      const userId = req.user.id
+      const userId = req.user.id;
 
       const {
         firstName,
@@ -125,8 +152,8 @@ export async function registerRoutes(httpServer: Server, app: Express) {
         skills,
         bio,
         githubUrl,
-        resumeUrl
-      } = req.body
+        resumeUrl,
+      } = req.body;
 
       await pool.query(
         `UPDATE users 
@@ -148,29 +175,22 @@ export async function registerRoutes(httpServer: Server, app: Express) {
           bio,
           githubUrl,
           resumeUrl,
-          userId
-        ]
-      )
+          userId,
+        ],
+      );
 
-      res.json({ message: "Profile updated successfully" })
-
+      res.json({ message: "Profile updated successfully" });
     } catch (error) {
-
-      console.error(error)
-      res.status(500).json({ message: "Failed to update profile" })
-
+      console.error(error);
+      res.status(500).json({ message: "Failed to update profile" });
     }
-
-  })
-
+  });
 
   // =========================
   // CREATE PROJECT
   // =========================
   app.post("/api/projects", isAuthenticated, async (req: any, res: any) => {
-
     try {
-
       const userId = req.user.id;
 
       const {
@@ -184,7 +204,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
         contact_info,
         required_skills,
         comms_link,
-        members_needed
+        members_needed,
       } = req.body;
 
       const result = await pool.query(
@@ -217,55 +237,44 @@ export async function registerRoutes(httpServer: Server, app: Express) {
           contact_info,
           required_skills,
           comms_link,
-          members_needed
-        ]
+          members_needed,
+        ],
       );
 
       res.json(result.rows[0]);
-
     } catch (error) {
-
       console.error("CREATE PROJECT ERROR:", error);
       res.status(500).json({ message: "Failed to create project" });
-
     }
-
   });
-
 
   // =========================
   // GET ALL PROJECTS
   // =========================
-  app.get("/api/projects", async (req, res) => {
-
+  app.get("/api/projects", isAuthenticated, async (_req, res) => {
     try {
-
       const result = await pool.query(
-        `SELECT * FROM projects ORDER BY created_at DESC`
+        "SELECT * FROM projects ORDER BY created_at DESC",
       );
 
       res.json(result.rows);
-
     } catch (error) {
-
       console.error(error);
       res.status(500).json({ message: "Failed to fetch projects" });
-
     }
-
   });
 
   // =========================
   // SINGLE PROJECT
   // =========================
-  app.get("/api/projects/:id", async (req, res) => {
+  app.get("/api/projects/:id", isAuthenticated, async (req, res) => {
     const result = await pool.query(
-      `SELECT * FROM projects WHERE id=$1`,
-      [req.params.id]
+      "SELECT * FROM projects WHERE id=$1",
+      [req.params.id],
     );
 
     res.json(result.rows[0]);
   });
 
-  return httpServer
+  return httpServer;
 }
