@@ -1,4 +1,4 @@
-import { Express } from "express";
+﻿import { Express } from "express";
 import { Server } from "http";
 import { clerkClient, getAuth } from "@clerk/express";
 import { pool } from "./db";
@@ -70,7 +70,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
           resume_url
         FROM users
         WHERE id=$1`,
-        [req.user.id],
+        [req.user.id]
       );
 
       let user = result.rows[0];
@@ -92,7 +92,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
             primaryEmail,
             clerkUser.firstName || null,
             clerkUser.lastName || null,
-          ],
+          ]
         );
 
         result = await pool.query(
@@ -109,7 +109,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
             resume_url
           FROM users
           WHERE id=$1`,
-          [req.user.id],
+          [req.user.id]
         );
 
         user = result.rows[0];
@@ -176,7 +176,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
           githubUrl,
           resumeUrl,
           userId,
-        ],
+        ]
       );
 
       res.json({ message: "Profile updated successfully" });
@@ -238,7 +238,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
           required_skills,
           comms_link,
           members_needed,
-        ],
+        ]
       );
 
       res.json(result.rows[0]);
@@ -254,7 +254,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   app.get("/api/projects", isAuthenticated, async (_req, res) => {
     try {
       const result = await pool.query(
-        "SELECT * FROM projects ORDER BY created_at DESC",
+        "SELECT * FROM projects ORDER BY created_at DESC"
       );
 
       res.json(result.rows);
@@ -270,7 +270,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   app.get("/api/projects/:id", isAuthenticated, async (req, res) => {
     const result = await pool.query(
       "SELECT * FROM projects WHERE id=$1",
-      [req.params.id],
+      [req.params.id]
     );
 
     res.json(result.rows[0]);

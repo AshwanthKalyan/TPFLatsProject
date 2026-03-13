@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express, { Request, Response, NextFunction } from "express";
 import session from "express-session";
+import { clerkMiddleware } from "@clerk/express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { setupVite } from "./vite";
@@ -14,6 +15,9 @@ app.set("trust proxy", 1);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Clerk auth middleware (reads Clerk session cookies / tokens)
+app.use(clerkMiddleware());
 
 /* Session configuration */
 app.use(

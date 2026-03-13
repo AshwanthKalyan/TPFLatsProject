@@ -28,9 +28,9 @@ export function AppSidebar() {
     logout(undefined, {
       onSettled: async () => {
         try {
-          await signOut({ redirectUrl: "/auth" });
+          await signOut({ redirectUrl: "/" });
         } catch {
-          setLocation("/auth");
+          setLocation("/");
         }
       },
     });

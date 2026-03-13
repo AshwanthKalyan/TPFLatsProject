@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { Terminal } from "lucide-react";
 import { useEffect } from "react";
+import { Redirect } from "wouter";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -19,6 +20,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  if (!isAuthenticated) {
+    return <Redirect to="/auth" />;
+  }
 
   return (
     <SidebarProvider style={{ "--sidebar-width": "18rem" } as React.CSSProperties}>
