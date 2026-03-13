@@ -4,6 +4,7 @@ import { Server } from "http";
 import { pool } from "./db";  
 
 
+<<<<<<< HEAD
 export async function registerRoutes(httpServer: Server, app: Express) {
 
   console.log("Register Routes Hit!");
@@ -25,6 +26,16 @@ const transporter = nodemailer.createTransport({
 export async function registerRoutes(httpServer: Server, app: Express) {
 
   app.get("/api/test-db", async (_req, res) => {
+=======
+export async function registerRoutes(httpServer: Server, app: Express) {
+
+  console.log("Register Routes HIT!");
+
+  app.get("/api/test-db", async (req,res)=>{
+
+    console.log("in test-db");
+    
+>>>>>>> 84d81a7 (Correct commit, for Sakthi)
     const result = await pool.query("SELECT NOW()");
     res.json(result.rows);
   });
@@ -42,6 +53,7 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     next();
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   
   // =========================
@@ -189,6 +201,12 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   /* =========================
      GET USER PROFILE
   ========================= */
+=======
+
+  // =========================
+  // GET USER PROFILE
+  // =========================
+>>>>>>> 84d81a7 (Correct commit, for Sakthi)
   app.get("/api/me", isAuthenticated, async (req: any, res) => {
 
     try {
