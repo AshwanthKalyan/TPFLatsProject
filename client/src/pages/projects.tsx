@@ -4,7 +4,7 @@ import { Plus, Search, Terminal } from "lucide-react";
 import { useState } from "react";
 
 export default function Projects() {
-  const { data: projects, isLoading } = useProjects();
+  const { data: projects, isLoading, isError } = useProjects();
   const createProject = useCreateProject();
 
   const [showCreate, setShowCreate] = useState(false);
@@ -18,6 +18,14 @@ export default function Projects() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center h-64 text-red-500 font-mono">
+        Failed to load projects. Please try again later.
+      </div>
+    );
+  }
+
   const filteredProjects = projects?.filter((p: any) =>
     p.title?.toLowerCase().includes(search.toLowerCase()) ||
     p.tech_stack?.some((t: string) =>
@@ -26,55 +34,30 @@ export default function Projects() {
   );
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
-
     e.preventDefault();
 
     const fd = new FormData(e.currentTarget);
 
     const data = {
-
       title: fd.get("title"),
-
       description: fd.get("description"),
-
-      tech_stack: (fd.get("techStack") as string)
-        ?.split(",")
-        .map((s) => s.trim()),
-
-      skills_required: (fd.get("skillsRequired") as string)
-        ?.split(",")
-        .map((s) => s.trim()),
-
+      tech_stack: (fd.get("techStack") as string)?.split(",").map(s => s.trim()),
+      skills_required: (fd.get("skillsRequired") as string)?.split(",").map(s => s.trim()),
       collaborators_needed: Number(fd.get("collaboratorsNeeded")),
-
       project_type: fd.get("projectType"),
-
       duration: fd.get("duration"),
-
       contact_info: fd.get("contactInfo"),
-
-      required_skills: (fd.get("skillsRequired") as string)
-        ?.split(",")
-        .map((s) => s.trim()),
-
       comms_link: fd.get("contactInfo"),
-
-      members_needed: Number(fd.get("collaboratorsNeeded"))
-
+      members_needed: Number(fd.get("collaboratorsNeeded")),
     };
 
-    console.log("FORM DATA:", data);
-
     createProject.mutate(data, {
-      onSuccess: () => {
-        setShowCreate(false);
-      },
+      onSuccess: () => setShowCreate(false),
     });
-
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 px-4 md:px-8 lg:px-16">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -116,49 +99,22 @@ export default function Projects() {
 
             <form onSubmit={handleCreate} className="space-y-4 font-mono">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                <input name="title" required placeholder="Title"
-                className="border p-3 bg-background border-primary/30"/>
-
-                <input name="projectType" required placeholder="Type"
-                className="border p-3 bg-background border-primary/30"/>
-
-                <textarea name="description" required rows={3}
-                placeholder="Description"
-                className="border p-3 bg-background border-primary/30"/>
-
-                <input name="techStack" required placeholder="React, Node"
-                className="border p-3 bg-background border-primary/30"/>
-
-                <input name="skillsRequired" required placeholder="Frontend"
-                className="border p-3 bg-background border-primary/30"/>
-
-                <input name="collaboratorsNeeded" type="number" min="1" required
-                placeholder="Members"
-                className="border p-3 bg-background border-primary/30"/>
-
-                <input name="duration" required placeholder="3 weeks"
-                className="border p-3 bg-background border-primary/30"/>
-
-                <input name="contactInfo" required placeholder="Discord"
-                className="border p-3 bg-background border-primary/30"/>
-
+                <input name="title" required placeholder="Title" className="border p-3 bg-background border-primary/30"/>
+                <input name="projectType" required placeholder="Type" className="border p-3 bg-background border-primary/30"/>
+                <textarea name="description" required rows={3} placeholder="Description" className="border p-3 bg-background border-primary/30"/>
+                <input name="techStack" required placeholder="React, Node" className="border p-3 bg-background border-primary/30"/>
+                <input name="skillsRequired" required placeholder="Frontend" className="border p-3 bg-background border-primary/30"/>
+                <input name="collaboratorsNeeded" type="number" min="1" required placeholder="Members" className="border p-3 bg-background border-primary/30"/>
+                <input name="duration" required placeholder="3 weeks" className="border p-3 bg-background border-primary/30"/>
+                <input name="contactInfo" required placeholder="Discord" className="border p-3 bg-background border-primary/30"/>
               </div>
 
               <div className="flex justify-end gap-4 pt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowCreate(false)}
-                  className="px-6 py-2 border border-primary/50"
-                >
+                <button type="button" onClick={() => setShowCreate(false)} className="px-6 py-2 border border-primary/50">
                   Cancel
                 </button>
 
-                <button
-                  type="submit"
-                  disabled={createProject.isPending}
-                  className="px-6 py-2 bg-primary text-background"
-                >
+                <button type="submit" disabled={createProject.isPending} className="px-6 py-2 bg-primary text-background">
                   {createProject.isPending ? "Deploying..." : "Deploy Project"}
                 </button>
               </div>
@@ -168,16 +124,22 @@ export default function Projects() {
       )}
 
       {/* PROJECT GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredProjects?.map((project: any) => (
-          <Link key={project.id} href={`/projects/${project.id}`}>
-            <div className="border p-6">
-              <h3>{project.title}</h3>
-              <p>{project.description}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {filteredProjects && filteredProjects.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredProjects.map((project: any) => (
+            <Link key={project.id} href={`/projects/${project.id}`}>
+              <div className="border p-6 bg-background/20 hover:bg-background/40 transition rounded-lg shadow-md hover:shadow-lg cursor-pointer">
+                <h3 className="font-bold text-lg">{project.title}</h3>
+                <p className="text-sm mt-2">{project.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="text-muted-foreground text-center font-mono mt-8">
+          No projects found.
+        </div>
+      )}
     </div>
   );
 }
