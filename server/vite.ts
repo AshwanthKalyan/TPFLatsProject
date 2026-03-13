@@ -29,11 +29,17 @@ export async function setupVite(server: Server, app: Express) {
     appType: "custom",
   });
 
-  // Vite middleware
+  // Attach Vite middlewares
   app.use(vite.middlewares);
 
-  // Catch-all route for React frontend
+  // React catch-all route (ONLY for non-API routes)
   app.use(async (req, res, next) => {
+
+    // Let backend API routes pass through
+    if (req.originalUrl.startsWith("/api")) {
+      return next();
+    }
+
     const url = req.originalUrl;
 
     try {
@@ -46,6 +52,7 @@ export async function setupVite(server: Server, app: Express) {
 
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
 
+      // bust cache in dev
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
@@ -58,9 +65,9 @@ export async function setupVite(server: Server, app: Express) {
         .set({ "Content-Type": "text/html" })
         .end(page);
 
-    } catch (e) {
-      vite.ssrFixStacktrace(e as Error);
-      next(e);
+    } catch (error) {
+      vite.ssrFixStacktrace(error as Error);
+      next(error);
     }
   });
 }
