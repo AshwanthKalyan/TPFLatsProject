@@ -1,6 +1,5 @@
-import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
-import Projects from "@/pages/projects";
-import DashboardLayout from './dashboard-layout';
+import { Show, SignInButton, SignUpButton } from '@clerk/react';
+import { Redirect } from "wouter";
 import { useState } from "react";
 
 function App() {
@@ -58,8 +57,7 @@ function App() {
 
         {/* Signed In View */}
         <Show when="signed-in">
-          <UserButton />
-          <Projects />
+          <Redirect to="/projects" />
         </Show>
 
       </header>
