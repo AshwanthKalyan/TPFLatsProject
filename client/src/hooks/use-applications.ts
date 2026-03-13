@@ -26,6 +26,17 @@ export function useMyApplications() {
   });
 }
 
+export function useMyProjectApplications() {
+  return useQuery({
+    queryKey: ["/api/my-project-applications"],
+    queryFn: async () => {
+      const res = await fetch("/api/my-project-applications", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch applications to your projects");
+      return await res.json();
+    },
+  });
+}
+
 export function useCreateApplication(projectId: number) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -63,6 +74,7 @@ export function useUpdateApplicationStatus() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [api.applications.listForProject.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-project-applications"] });
     },
   });
 }

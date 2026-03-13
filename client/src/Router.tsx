@@ -7,6 +7,7 @@ import Projects from "@/pages/projects";
 import ProjectDetails from "@/pages/project-details";
 import Profile from "@/pages/profile";
 import MyApplications from "@/pages/my-applications";
+import MySubmissions from "@/pages/my-submissions";
 import NotFound from "@/pages/not-found";
 
 export default function Router() {
@@ -45,6 +46,14 @@ export default function Router() {
         {() => (
           <DashboardLayout>
             <MyApplications />
+          </DashboardLayout>
+        )}
+      </Route>
+
+      <Route path="/submissions">
+        {() => (
+          <DashboardLayout>
+            <MySubmissions />
           </DashboardLayout>
         )}
       </Route>

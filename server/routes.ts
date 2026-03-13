@@ -276,5 +276,304 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     res.json(result.rows[0]);
   });
 
+  // =========================
+  // LIST APPLICATIONS FOR PROJECT
+  // =========================
+  app.get("/api/projects/:projectId/applications", isAuthenticated, async (req, res) => {
+    try {
+      const projectId = Number(req.params.projectId);
+      const ownerRes = await pool.query(
+        "SELECT owner_id FROM projects WHERE id=$1",
+        [projectId]
+      );
+
+      if (!ownerRes.rows[0]) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const isOwner = ownerRes.rows[0].owner_id === req.user.id;
+
+      if (isOwner) {
+        const result = await pool.query(
+          `SELECT 
+            a.id,
+            a.project_id,
+            a.applicant_id,
+            a.resume_url,
+            a.message,
+            a.status,
+            a.created_at,
+            u.id AS user_id,
+            u.email,
+            u.first_name,
+            u.last_name,
+            u.department,
+            u.year_of_study,
+            u.skills,
+            u.bio,
+            u.github_url,
+            u.resume_url AS user_resume_url
+          FROM applications a
+          JOIN users u ON a.applicant_id = u.id
+          WHERE a.project_id = $1
+          ORDER BY a.created_at DESC`,
+          [projectId]
+        );
+
+        return res.json(
+          result.rows.map((row) => ({
+            id: row.id,
+            projectId: row.project_id,
+            applicantId: row.applicant_id,
+            resumeUrl: row.resume_url,
+            message: row.message,
+            status: row.status,
+            createdAt: row.created_at,
+            applicant: {
+              id: row.user_id,
+              email: row.email,
+              firstName: row.first_name,
+              lastName: row.last_name,
+              department: row.department,
+              year: row.year_of_study,
+              skills: row.skills,
+              bio: row.bio,
+              githubUrl: row.github_url,
+              resumeUrl: row.user_resume_url,
+            },
+          }))
+        );
+      }
+
+      const result = await pool.query(
+        `SELECT 
+          id,
+          project_id,
+          applicant_id,
+          resume_url,
+          message,
+          status,
+          created_at
+        FROM applications
+        WHERE project_id=$1 AND applicant_id=$2
+        ORDER BY created_at DESC`,
+        [projectId, req.user.id]
+      );
+
+      return res.json(
+        result.rows.map((row) => ({
+          id: row.id,
+          projectId: row.project_id,
+          applicantId: row.applicant_id,
+          resumeUrl: row.resume_url,
+          message: row.message,
+          status: row.status,
+          createdAt: row.created_at,
+        }))
+      );
+    } catch (error) {
+      console.error("FETCH PROJECT APPLICATIONS ERROR:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  // =========================
+  // CREATE APPLICATION
+  // =========================
+  app.post("/api/projects/:projectId/applications", isAuthenticated, async (req, res) => {
+    try {
+      const projectId = Number(req.params.projectId);
+      const { resumeUrl, message } = req.body;
+
+      const projectRes = await pool.query(
+        "SELECT owner_id FROM projects WHERE id=$1",
+        [projectId]
+      );
+
+      if (!projectRes.rows[0]) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      if (projectRes.rows[0].owner_id === req.user.id) {
+        return res.status(400).json({ message: "Cannot apply to your own project" });
+      }
+
+      const existing = await pool.query(
+        "SELECT id FROM applications WHERE project_id=$1 AND applicant_id=$2",
+        [projectId, req.user.id]
+      );
+
+      if (existing.rows[0]) {
+        return res.status(409).json({ message: "Already applied" });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO applications
+          (project_id, applicant_id, resume_url, message, status)
+         VALUES ($1, $2, $3, $4, 'pending')
+         RETURNING *`,
+        [projectId, req.user.id, resumeUrl || null, message || null]
+      );
+
+      const row = result.rows[0];
+      res.status(201).json({
+        id: row.id,
+        projectId: row.project_id,
+        applicantId: row.applicant_id,
+        resumeUrl: row.resume_url,
+        message: row.message,
+        status: row.status,
+        createdAt: row.created_at,
+      });
+    } catch (error) {
+      console.error("CREATE APPLICATION ERROR:", error);
+      res.status(500).json({ message: "Failed to apply" });
+    }
+  });
+
+  // =========================
+  // LIST MY SUBMISSIONS
+  // =========================
+  app.get("/api/users/applications", isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT 
+          a.id,
+          a.project_id,
+          a.message,
+          a.status,
+          a.created_at,
+          p.title AS project_title
+        FROM applications a
+        JOIN projects p ON a.project_id = p.id
+        WHERE a.applicant_id = $1
+        ORDER BY a.created_at DESC`,
+        [req.user.id]
+      );
+
+      res.json(
+        result.rows.map((row) => ({
+          id: row.id,
+          projectId: row.project_id,
+          projectTitle: row.project_title,
+          message: row.message,
+          status: row.status,
+          createdAt: row.created_at,
+        }))
+      );
+    } catch (error) {
+      console.error("FETCH MY APPLICATIONS ERROR:", error);
+      res.status(500).json({ message: "Failed to fetch your applications" });
+    }
+  });
+
+  // =========================
+  // UPDATE APPLICATION STATUS
+  // =========================
+  app.patch("/api/applications/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      const { status } = req.body;
+
+      if (!["pending", "accepted", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const result = await pool.query(
+        `UPDATE applications a
+         SET status = $1
+         WHERE a.id = $2
+           AND EXISTS (
+             SELECT 1 FROM projects p
+             WHERE p.id = a.project_id
+               AND p.owner_id = $3
+           )
+         RETURNING *`,
+        [status, id, req.user.id]
+      );
+
+      if (!result.rows[0]) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+
+      const row = result.rows[0];
+      res.json({
+        id: row.id,
+        projectId: row.project_id,
+        applicantId: row.applicant_id,
+        resumeUrl: row.resume_url,
+        message: row.message,
+        status: row.status,
+        createdAt: row.created_at,
+      });
+    } catch (error) {
+      console.error("UPDATE APPLICATION STATUS ERROR:", error);
+      res.status(500).json({ message: "Failed to update status" });
+    }
+  });
+
+  // =========================
+  // APPLICATIONS TO MY PROJECTS
+  // =========================
+  app.get("/api/my-project-applications", isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT 
+          a.id,
+          a.project_id,
+          a.applicant_id,
+          a.resume_url,
+          a.message,
+          a.status,
+          a.created_at,
+          p.title AS project_title,
+          u.id AS user_id,
+          u.email,
+          u.first_name,
+          u.last_name,
+          u.department,
+          u.year_of_study,
+          u.skills,
+          u.bio,
+          u.github_url,
+          u.resume_url AS user_resume_url
+        FROM applications a
+        JOIN projects p ON a.project_id = p.id
+        JOIN users u ON a.applicant_id = u.id
+        WHERE p.owner_id = $1
+        ORDER BY a.created_at DESC`,
+        [req.user.id]
+      );
+
+      res.json(
+        result.rows.map((row) => ({
+          applicationId: row.id,
+          projectId: row.project_id,
+          applicantId: row.applicant_id,
+          resumeUrl: row.resume_url,
+          message: row.message,
+          status: row.status,
+          createdAt: row.created_at,
+          projectTitle: row.project_title,
+          applicant: {
+            id: row.user_id,
+            email: row.email,
+            firstName: row.first_name,
+            lastName: row.last_name,
+            department: row.department,
+            year: row.year_of_study,
+            skills: row.skills,
+            bio: row.bio,
+            githubUrl: row.github_url,
+            resumeUrl: row.user_resume_url,
+          },
+        }))
+      );
+    } catch (error) {
+      console.error("FETCH MY PROJECT APPLICATIONS ERROR:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
   return httpServer;
 }

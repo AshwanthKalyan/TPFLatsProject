@@ -20,7 +20,8 @@ export function AppSidebar() {
 
   const items = [
     { title: "Browse Hub", url: "/projects", icon: LayoutDashboard },
-    { title: "My Applications", url: "/applications", icon: Send },
+    { title: "Applicants", url: "/applications", icon: FolderKanban },
+    { title: "My Submissions", url: "/submissions", icon: Send },
     { title: "Profile", url: "/profile", icon: UserCircle },
   ];
 
