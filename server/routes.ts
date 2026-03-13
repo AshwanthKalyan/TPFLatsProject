@@ -9,13 +9,19 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
   console.log("Register Routes HIT!");
 
-  app.get("/api/test-db", async (req,res)=>{
-
+  const testDbHandler = async (_req: any, res: any) => {
     console.log("in test-db");
-    
-    const result = await pool.query("SELECT NOW()");
-    res.json(result.rows);
-  });
+    try {
+      const result = await pool.query("SELECT NOW()");
+      res.json(result.rows);
+    } catch (err) {
+      console.error("test-db error:", err);
+      res.status(500).json({ message: "DB test failed" });
+    }
+  };
+
+  app.get("/api/test-db", testDbHandler);
+  app.get("/test-db", testDbHandler);
 
   // middleware to check login
   function isAuthenticated(req: any, res: any, next: any) {
