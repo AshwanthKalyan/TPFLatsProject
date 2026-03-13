@@ -1,69 +1,86 @@
-import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
-import Projects from "@/pages/projects";
-import DashboardLayout from './dashboard-layout';
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Show, SignInButton, SignUpButton } from "@clerk/react";
+import { Redirect } from "wouter";
 
 function App() {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      setMouse({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
 
   return (
-    <>
-    <div>
-      
-    </div>
-      <header className="relative w-full flex flex-col items-center justify-center min-h-screen">
-        
-        {/* Signed Out View */}
+    <header className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-black text-white">
+
+      {/* Mouse Glow */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background: `radial-gradient(400px at ${mouse.x}px ${mouse.y}px, rgba(0,255,255,0.25), transparent 80%)`,
+        }}
+      />
+
+      {/* Cyberpunk Grid Background */}
+      <div className="absolute inset-0 z-0 opacity-30">
+        <div
+          className="w-full h-full"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(0,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,0,200,0.15) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
+      </div>
+
+      {/* Glow Orbs */}
+      <div className="absolute w-[500px] h-[500px] bg-pink-500 blur-[200px] opacity-30 rounded-full top-[-100px] left-[-100px]" />
+      <div className="absolute w-[500px] h-[500px] bg-cyan-400 blur-[200px] opacity-30 rounded-full bottom-[-100px] right-[-100px]" />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center gap-10">
+
+        {/* Title */}
+        <h1 className="text-4xl md:text-6xl font-mono tracking-widest text-cyan-300 drop-shadow-[0_0_20px_cyan]">
+          The Product Folks - NITT
+        </h1>
+
         <Show when="signed-out">
-          <div
-            className="relative w-full flex items-center justify-center mt-12 h-96" // set a visible height
-            onMouseMove={handleMouseMove}
-          >
-            {/* Interactive holo background */}
-            <div
-              className="absolute inset-0 rounded-xl pointer-events-none"
-              style={{
-                background: `
-                  radial-gradient(circle at ${mousePos.x}px ${mousePos.y}px, rgba(0,255,255,0.3), rgba(255,0,255,0.2) 40%, rgba(128,0,255,0.1) 70%, transparent 100%)
-                `,
-                filter: "blur(150px)",
-                transition: "background 0.05s",
-              }}
-            />
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
 
-            {/* Buttons */}
-            <div className="relative flex flex-col md:flex-row gap-6 items-center justify-center z-10">
-              <SignInButton>
-                <div className="px-8 py-3 font-mono text-sm md:text-base tracking-widest text-primary border border-primary/50 bg-background/30 backdrop-blur-lg hover:bg-background/50 hover:shadow-[0_0_30px_rgba(0,255,255,0.7)] hover:scale-105 transition-all duration-300 rounded-xl drop-shadow-[0_0_20px_cyan]">
-                  SIGN IN
-                </div>
-              </SignInButton>
+            <SignInButton>
+              <button className="px-10 py-3 font-mono tracking-widest text-cyan-300 border border-cyan-400 bg-black/40 backdrop-blur-lg rounded-xl hover:bg-cyan-400/10 hover:shadow-[0_0_20px_cyan] transition-all duration-300">
+                SIGN IN
+              </button>
+            </SignInButton>
 
-              <SignUpButton>
-                <div className="px-8 py-3 font-mono text-sm md:text-base tracking-widest text-pink-500 border border-pink-500/50 bg-background/30 backdrop-blur-lg hover:bg-background/50 hover:shadow-[0_0_30px_rgba(255,0,255,0.7)] hover:scale-105 transition-all duration-300 rounded-xl drop-shadow-[0_0_20px_magenta]">
-                  SIGN UP
-                </div>
-              </SignUpButton>
-            </div>
+            <SignUpButton>
+              <button className="px-10 py-3 font-mono tracking-widest text-pink-400 border border-pink-500 bg-black/40 backdrop-blur-lg rounded-xl hover:bg-pink-500/10 hover:shadow-[0_0_20px_pink] transition-all duration-300">
+                SIGN UP
+              </button>
+            </SignUpButton>
+
           </div>
         </Show>
 
-        {/* Signed In View */}
         <Show when="signed-in">
-          <UserButton />
-          <Projects />
+          <Redirect to="/projects" />
         </Show>
+      </div>
 
-      </header>
-    </>
+      {/* Scanlines Overlay */}
+      <div className="pointer-events-none absolute inset-0 opacity-10 z-20"
+        style={{
+          background:
+            "repeating-linear-gradient(0deg, rgba(255,255,255,0.05), rgba(255,255,255,0.05) 1px, transparent 1px, transparent 3px)",
+        }}
+      />
+
+    </header>
   );
 }
 

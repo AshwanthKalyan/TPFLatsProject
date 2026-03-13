@@ -1,8 +1,9 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
 import * as schema from "@shared/schema";
 
-const { Pool } = pg;
+// Prefer HTTPS fetch for Pool queries to avoid WebSocket restrictions.
+neonConfig.poolQueryViaFetch = true;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -10,12 +11,8 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Neon requires SSL, serverless connections must disable rejectUnauthorized
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
 });
 
 export const db = drizzle(pool, { schema });

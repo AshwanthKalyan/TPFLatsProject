@@ -17,11 +17,11 @@ export default function Landing() {
   }, []);
 
   const handleEnter = () => {
-    setLocation("/projects");
+    setLocation("/auth");
   };
 
   const handleAuth = () => {
-    setLocation("/auth");
+    setLocation("/projects");
   };
 
   return (
