@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import { pool } from "./db";  
 import { storage } from "./storage";
 
+
 const otpStore: Record<string, string> = {};
 
 // EMAIL TRANSPORTER

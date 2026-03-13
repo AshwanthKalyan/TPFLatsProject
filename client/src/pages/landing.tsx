@@ -1,12 +1,13 @@
 import { WebGLShader } from "@/components/ui/web-gl-shader";
 import { LiquidGlassButton } from "@/components/ui/liquid-glass-button";
-import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
 import { Terminal } from "lucide-react";
+import { ClerkLoading, ClerkLoaded, ClerkDegraded, ClerkFailed } from '@clerk/react-router'
+
 
 export default function Landing() {
-  const { isAuthenticated, isLoading } = useAuth(); //calling function and when it returns values, i.e isAuthenticated and isLoading stored here, correspondingly
+  // const { isAuthenticated, isLoading } = useAuth(); //calling function and when it returns values, i.e isAuthenticated and isLoading stored here, correspondingly
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -14,20 +15,26 @@ export default function Landing() {
   }, []);
 
   const handleEnter = async () => {
-    if (isAuthenticated) {
+    // if (isAuthenticated) {
       setLocation("/projects");
-    } else {
-      setLocation("/auth");
-    }
+    // } else {
+    //   setLocation("/auth");
+    // }
   };
 
-  if (isLoading) {
-    return (
+  <ClerkLoading>
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Terminal className="h-12 w-12 text-primary animate-pulse" />
       </div>
-    );
-  }
+    </ClerkLoading>
+
+  // if (isLoading) {
+  //   return (
+  //     <div className="min-h-screen bg-background flex items-center justify-center">
+  //       <Terminal className="h-12 w-12 text-primary animate-pulse" />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="relative min-h-screen bg-background overflow-hidden flex flex-col items-center justify-center">
@@ -48,7 +55,8 @@ export default function Landing() {
         </p>
 
         <LiquidGlassButton onClick={handleEnter}>
-          {isAuthenticated ? "ACCESS MAINFRAME" : "AUTHENTICATE"}
+          {/* {isAuthenticated ? "ACCESS MAINFRAME" : "AUTHENTICATE"} */}
+          {"ACCESS MAINFRAME"}
         </LiquidGlassButton>
       </div>
 
