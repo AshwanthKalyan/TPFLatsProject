@@ -23,6 +23,25 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   app.get("/api/test-db", testDbHandler);
   app.get("/test-db", testDbHandler);
 
+  // =========================
+  // LOGOUT
+  // =========================
+  app.post("/api/logout", (req: any, res: any) => {
+    if (!req.session) {
+      return res.json({ message: "Logged out" });
+    }
+
+    req.session.destroy((err: any) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Failed to logout" });
+      }
+
+      res.clearCookie("connect.sid");
+      res.json({ message: "Logged out" });
+    });
+  });
+
   // middleware to check login
   function isAuthenticated(req: any, res: any, next: any) {
 

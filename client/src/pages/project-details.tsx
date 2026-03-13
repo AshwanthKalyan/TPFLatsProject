@@ -264,7 +264,13 @@ export default function ProjectDetails() {
         {/* APPLY BUTTON */}
 
         {!isCreator && !hasApplied && !showApply && (
-          <div className="mt-8 flex justify-end">
+          <div className="mt-8 flex justify-end gap-3">
+            <button
+              onClick={() => setLocation("/projects")}
+              className="border border-primary/40 px-6 py-2"
+            >
+              Not Now
+            </button>
             <button
               onClick={() => setShowApply(true)}
               className="bg-primary text-black px-6 py-2 flex items-center gap-2"
