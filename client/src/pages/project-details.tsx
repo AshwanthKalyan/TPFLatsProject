@@ -36,6 +36,12 @@ export default function ProjectDetails() {
   const [showApply, setShowApply] = useState(false);
   const [editing, setEditing] = useState(false);
 
+  const normalizeUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    return `https://${url}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -411,7 +417,7 @@ export default function ProjectDetails() {
 
                 {app.resumeUrl && (
                   <a
-                    href={app.resumeUrl}
+                    href={normalizeUrl(app.resumeUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="text-blue-500"

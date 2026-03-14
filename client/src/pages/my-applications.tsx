@@ -8,6 +8,12 @@ export default function MyApplications() {
   const [openId, setOpenId] = useState<number | null>(null);
   const updateStatus = useUpdateApplicationStatus();
 
+  const normalizeUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    return `https://${url}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -168,7 +174,7 @@ export default function MyApplications() {
                   )}
                   {app.resumeUrl && (
                     <a
-                      href={app.resumeUrl}
+                      href={normalizeUrl(app.resumeUrl)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-sm text-primary underline"
@@ -178,7 +184,7 @@ export default function MyApplications() {
                   )}
                   {app.applicant?.resumeUrl && (
                     <a
-                      href={app.applicant.resumeUrl}
+                      href={normalizeUrl(app.applicant.resumeUrl)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-sm text-primary underline"

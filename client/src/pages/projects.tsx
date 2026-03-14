@@ -100,13 +100,13 @@ export default function Projects() {
             <form onSubmit={handleCreate} className="space-y-4 font-mono">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input name="title" required placeholder="Title" className="border p-3 bg-background border-primary/30"/>
-                <input name="projectType" required placeholder="Type" className="border p-3 bg-background border-primary/30"/>
+                <input name="projectType" required placeholder="Project Type" className="border p-3 bg-background border-primary/30"/>
                 <textarea name="description" required rows={3} placeholder="Description" className="border p-3 bg-background border-primary/30"/>
-                <input name="techStack" required placeholder="React, Node" className="border p-3 bg-background border-primary/30"/>
-                <input name="skillsRequired" required placeholder="Frontend" className="border p-3 bg-background border-primary/30"/>
-                <input name="collaboratorsNeeded" type="number" min="1" required placeholder="Members" className="border p-3 bg-background border-primary/30"/>
-                <input name="duration" required placeholder="3 weeks" className="border p-3 bg-background border-primary/30"/>
-                <input name="contactInfo" required placeholder="Discord" className="border p-3 bg-background border-primary/30"/>
+                <input name="techStack" required placeholder="Required Tech Stack" className="border p-3 bg-background border-primary/30"/>
+                <input name="skillsRequired" required placeholder="Skills Required" className="border p-3 bg-background border-primary/30"/>
+                <input name="collaboratorsNeeded" type="number" min="1" required placeholder="Number of Collaborators Needed" className="border p-3 bg-background border-primary/30"/>
+                <input name="duration" required placeholder="Duration" className="border p-3 bg-background border-primary/30"/>
+                <input name="contactInfo" required placeholder="Contact Info" className="border p-3 bg-background border-primary/30"/>
               </div>
 
               <div className="flex justify-end gap-4 pt-6">
