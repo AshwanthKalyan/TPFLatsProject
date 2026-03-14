@@ -8,13 +8,25 @@ import {
   ClerkLoaded,
   Show
 } from "@clerk/react-router";
+import { useUser } from "@clerk/react";
 
 export default function Landing() {
   const [location, setLocation] = useLocation();
+  const { isLoaded, isSignedIn } = useUser();
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
   }, []);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) {
+      return;
+    }
+
+    if (location !== "/projects") {
+      setLocation("/projects", { replace: true });
+    }
+  }, [isLoaded, isSignedIn, location, setLocation]);
 
   const handleEnter = () => {
     setLocation("/auth");
