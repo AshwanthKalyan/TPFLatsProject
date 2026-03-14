@@ -3,6 +3,12 @@ import { Server } from "http";
 import { clerkClient, getAuth } from "@clerk/express";
 import { pool } from "./db";
 
+const NITT_EMAIL_REGEX = /^[a-z0-9]+@nitt\.edu$/i;
+
+function isNittEmail(email: string | null | undefined) {
+  return !!email && NITT_EMAIL_REGEX.test(email);
+}
+
 export async function registerRoutes(httpServer: Server, app: Express) {
   console.log("Register Routes HIT!");
 
@@ -40,15 +46,38 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // middleware to check login
-  function isAuthenticated(req: any, res: any, next: any) {
+  async function isAuthenticated(req: any, res: any, next: any) {
     const { userId } = getAuth(req);
 
     if (!userId) {
       return res.status(401).json({ message: "Not logged in" });
     }
 
-    req.user = { id: userId };
-    next();
+    try {
+      let email: string | null = null;
+
+      const existing = await pool.query(
+        "SELECT email FROM users WHERE id=$1",
+        [userId]
+      );
+
+      email = existing.rows[0]?.email || null;
+
+      if (!email) {
+        const clerkUser = await clerkClient.users.getUser(userId);
+        email = clerkUser.emailAddresses?.[0]?.emailAddress || null;
+      }
+
+      if (!isNittEmail(email)) {
+        return res.status(403).json({ message: "Use nitt webmail only" });
+      }
+
+      req.user = { id: userId, email };
+      next();
+    } catch (error) {
+      console.error("Auth check error:", error);
+      res.status(500).json({ message: "Auth check failed" });
+    }
   }
 
   // =========================

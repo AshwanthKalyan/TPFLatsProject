@@ -1,9 +1,23 @@
 ﻿import { useEffect, useState } from "react";
-import { Show, SignInButton, SignUpButton } from "@clerk/react";
-import { Redirect } from "wouter";
+import { Show, SignInButton, SignUpButton, useClerk, useUser } from "@clerk/react";
+import { Redirect, useLocation } from "wouter";
+
+const NITT_EMAIL_REGEX = /^[a-z0-9]+@nitt\.edu$/i;
+
+function isNittEmail(email: string | null | undefined) {
+  return !!email && NITT_EMAIL_REGEX.test(email);
+}
 
 function App() {
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
+  const [, setLocation] = useLocation();
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
+  const primaryEmail =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    null;
+  const isNitt = isNittEmail(primaryEmail);
 
   useEffect(() => {
     const move = (e: MouseEvent) => {
@@ -13,6 +27,25 @@ function App() {
     window.addEventListener("mousemove", move);
     return () => window.removeEventListener("mousemove", move);
   }, []);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || isNitt) {
+      return;
+    }
+
+    const signOutAndRedirect = async () => {
+      try {
+        await signOut();
+      } finally {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("nittAuthError", "1");
+        }
+        setLocation("/?auth=nitt", { replace: true });
+      }
+    };
+
+    void signOutAndRedirect();
+  }, [isLoaded, isSignedIn, isNitt, signOut, setLocation]);
 
   return (
     <header className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-black text-white">
@@ -49,6 +82,10 @@ function App() {
           THE PRODUCT FOLKS - NITT
         </h1>
 
+        <div className="inline-block border border-primary/50 bg-background/50 backdrop-blur-sm px-4 py-1.5 text-primary font-mono text-sm tracking-widest mb-8 brutal-shadow">
+            ENSURE YOU USE YOUR NITT WEBMAIL
+        </div>
+
         <Show when="signed-out">
           <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
 
@@ -68,7 +105,7 @@ function App() {
         </Show>
 
         <Show when="signed-in">
-          <Redirect to="/projects" />
+          {isNitt ? <Redirect to="/projects" /> : null}
         </Show>
       </div>
 

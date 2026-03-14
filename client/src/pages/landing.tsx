@@ -10,11 +10,29 @@ import {
 } from "@clerk/react-router";
 
 export default function Landing() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shouldAlert =
+      window.sessionStorage.getItem("nittAuthError") === "1" ||
+      params.get("auth") === "nitt";
+
+    if (!shouldAlert) {
+      return;
+    }
+
+    window.sessionStorage.removeItem("nittAuthError");
+    window.alert("Use nitt webmail only!");
+
+    if (location !== "/") {
+      setLocation("/", { replace: true });
+    }
+  }, [location, setLocation]);
 
   const handleEnter = () => {
     setLocation("/auth");
@@ -38,7 +56,7 @@ export default function Landing() {
 
           <div className="relative z-10 text-center px-4 max-w-5xl mx-auto flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
             <div className="inline-block border border-primary/50 bg-background/50 backdrop-blur-sm px-4 py-1.5 text-primary font-mono text-sm tracking-widest mb-8 brutal-shadow">
-              SYS.INIT // NITT HUB_
+              THE PRODUCT FOLKS - NITT
             </div>
 
             <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold text-foreground tracking-tighter mb-6 drop-shadow-[0_0_15px_rgba(0,255,255,0.5)]">
