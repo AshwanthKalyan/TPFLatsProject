@@ -16,24 +16,6 @@ export default function Landing() {
     document.documentElement.classList.add("dark");
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const shouldAlert =
-      window.sessionStorage.getItem("nittAuthError") === "1" ||
-      params.get("auth") === "nitt";
-
-    if (!shouldAlert) {
-      return;
-    }
-
-    window.sessionStorage.removeItem("nittAuthError");
-    window.alert("Use nitt webmail only!");
-
-    if (location !== "/") {
-      setLocation("/", { replace: true });
-    }
-  }, [location, setLocation]);
-
   const handleEnter = () => {
     setLocation("/auth");
   };

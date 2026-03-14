@@ -1,25 +1,14 @@
 ﻿import { useEffect, useState } from "react";
-import { Show, SignInButton, SignUpButton, useClerk, useUser } from "@clerk/react";
+import { Show, useClerk, useUser } from "@clerk/react";
 import { Redirect, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-
-const NITT_EMAIL_REGEX = /^[a-z0-9]+@nitt\.edu$/i;
-
-function isNittEmail(email: string | null | undefined) {
-  return !!email && NITT_EMAIL_REGEX.test(email);
-}
 
 function App() {
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [, setLocation] = useLocation();
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
   const { user: apiUser, isLoading: isApiLoading } = useAuth();
-  const primaryEmail =
-    user?.primaryEmailAddress?.emailAddress ||
-    user?.emailAddresses?.[0]?.emailAddress ||
-    null;
-  const isNitt = isNittEmail(primaryEmail);
 
   useEffect(() => {
     const move = (e: MouseEvent) => {
@@ -35,7 +24,7 @@ function App() {
       return;
     }
 
-    if (isNitt && apiUser) {
+    if (apiUser) {
       return;
     }
 
@@ -43,15 +32,12 @@ function App() {
       try {
         await signOut();
       } finally {
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem("nittAuthError", "1");
-        }
-        setLocation("/?auth=nitt", { replace: true });
+        setLocation("/auth", { replace: true });
       }
     };
 
     void signOutAndRedirect();
-  }, [isLoaded, isSignedIn, isApiLoading, isNitt, apiUser, signOut, setLocation]);
+  }, [isLoaded, isSignedIn, isApiLoading, apiUser, signOut, setLocation]);
 
   return (
     <header className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-black text-white">
@@ -89,29 +75,30 @@ function App() {
         </h1>
 
         <div className="inline-block border border-primary/50 bg-background/50 backdrop-blur-sm px-4 py-1.5 text-primary font-mono text-sm tracking-widest mb-8 brutal-shadow">
-            ENSURE YOU USE YOUR NITT WEBMAIL
+            AUTHENTICATE TO CONTINUE
         </div>
 
         <Show when="signed-out">
           <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
+            <button
+              className="px-10 py-3 font-mono tracking-widest text-cyan-300 border border-cyan-400 bg-black/40 backdrop-blur-lg rounded-xl hover:bg-cyan-400/10 hover:shadow-[0_0_20px_cyan] transition-all duration-300"
+              onClick={() => setLocation("/sign-in")}
+            >
+              SIGN IN
+            </button>
 
-            <SignInButton>
-              <button className="px-10 py-3 font-mono tracking-widest text-cyan-300 border border-cyan-400 bg-black/40 backdrop-blur-lg rounded-xl hover:bg-cyan-400/10 hover:shadow-[0_0_20px_cyan] transition-all duration-300">
-                SIGN IN
-              </button>
-            </SignInButton>
-
-            <SignUpButton>
-              <button className="px-10 py-3 font-mono tracking-widest text-pink-400 border border-pink-500 bg-black/40 backdrop-blur-lg rounded-xl hover:bg-pink-500/10 hover:shadow-[0_0_20px_pink] transition-all duration-300">
-                SIGN UP
-              </button>
-            </SignUpButton>
+            <button
+              className="px-10 py-3 font-mono tracking-widest text-pink-400 border border-pink-500 bg-black/40 backdrop-blur-lg rounded-xl hover:bg-pink-500/10 hover:shadow-[0_0_20px_pink] transition-all duration-300"
+              onClick={() => setLocation("/sign-up")}
+            >
+              SIGN UP
+            </button>
 
           </div>
         </Show>
 
         <Show when="signed-in">
-          {isNitt && apiUser ? <Redirect to="/projects" /> : null}
+          {apiUser ? <Redirect to="/projects" /> : null}
         </Show>
       </div>
 

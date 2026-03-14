@@ -2,6 +2,8 @@ import { Switch, Route } from "wouter";
 
 import Landing from "@/pages/landing";
 import AuthPage from "@/pages/AuthPage";
+import SignInPage from "@/pages/sign-in";
+import SignUpPage from "@/pages/sign-up";
 import DashboardLayout from "@/pages/dashboard-layout";
 import Projects from "@/pages/projects";
 import ProjectDetails from "@/pages/project-details";
@@ -18,6 +20,10 @@ export default function Router() {
       <Route path="/" component={Landing} />
 
       <Route path="/auth" component={AuthPage} />
+      <Route path="/sign-in" component={SignInPage} />
+      <Route path="/sign-in/:rest*" component={SignInPage} />
+      <Route path="/sign-up" component={SignUpPage} />
+      <Route path="/sign-up/:rest*" component={SignUpPage} />
 
       <Route path="/projects">
         {() => (

@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth as useClerkAuth } from "@clerk/react";
+import { useEffect } from "react";
 import type { User } from "@shared/models/auth";
 
 async function fetchUser(): Promise<User | null> {
@@ -27,7 +29,17 @@ async function logout(): Promise<void> {
 
 export function useAuth() {
 
+  const { isLoaded, isSignedIn } = useClerkAuth();
+
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!isLoaded || isSignedIn) {
+      return;
+    }
+
+    queryClient.setQueryData(["/api/me"], null);
+  }, [isLoaded, isSignedIn, queryClient]);
 
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/me"],
@@ -36,6 +48,7 @@ export function useAuth() {
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    enabled: isLoaded && isSignedIn,
   });
 
   const logoutMutation = useMutation({
@@ -47,7 +60,7 @@ export function useAuth() {
 
   return {
     user,
-    isLoading,
+    isLoading: !isLoaded || isLoading,
     isAuthenticated: !!user,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
