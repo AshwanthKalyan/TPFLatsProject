@@ -306,6 +306,23 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // =========================
+  // GET MY PROJECTS
+  // =========================
+  app.get("/api/my-projects", isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(
+        "SELECT * FROM projects WHERE owner_id=$1 ORDER BY created_at DESC",
+        [req.user.id]
+      );
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Failed to fetch your projects" });
+    }
+  });
+
+  // =========================
   // SINGLE PROJECT
   // =========================
   app.get("/api/projects/:id", isAuthenticated, async (req, res) => {

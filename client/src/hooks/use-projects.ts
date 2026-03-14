@@ -12,6 +12,18 @@ export function useProjects() {
   });
 }
 
+/* ---------------- GET MY PROJECTS ---------------- */
+export function useMyProjects() {
+  return useQuery({
+    queryKey: ["/api/my-projects"],
+    queryFn: async () => {
+      const res = await fetch("/api/my-projects", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch your projects");
+      return res.json();
+    },
+  });
+}
+
 /* ---------------- GET SINGLE PROJECT ---------------- */
 export function useProject(id: number) {
   return useQuery({

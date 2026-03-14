@@ -5,6 +5,7 @@ import AuthPage from "@/pages/AuthPage";
 import DashboardLayout from "@/pages/dashboard-layout";
 import Projects from "@/pages/projects";
 import ProjectDetails from "@/pages/project-details";
+import MyProjects from "@/pages/my-projects";
 import Profile from "@/pages/profile";
 import MyApplications from "@/pages/my-applications";
 import MySubmissions from "@/pages/my-submissions";
@@ -22,6 +23,14 @@ export default function Router() {
         {() => (
           <DashboardLayout>
             <Projects />
+          </DashboardLayout>
+        )}
+      </Route>
+
+      <Route path="/my-projects">
+        {() => (
+          <DashboardLayout>
+            <MyProjects />
           </DashboardLayout>
         )}
       </Route>

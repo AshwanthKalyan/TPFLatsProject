@@ -9,7 +9,7 @@ import {
   SidebarMenuItem, 
   SidebarMenuButton 
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, FolderKanban, UserCircle, Send, LogOut } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Folder, UserCircle, Send, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useClerk } from "@clerk/react";
 
@@ -20,8 +20,9 @@ export function AppSidebar() {
 
   const items = [
     { title: "Browse Hub", url: "/projects", icon: LayoutDashboard },
+    { title: "My Projects", url: "/my-projects", icon: Folder },
     { title: "Applicants", url: "/applications", icon: FolderKanban },
-    { title: "My Submissions", url: "/submissions", icon: Send },
+    { title: "My Applications", url: "/submissions", icon: Send },
     { title: "Profile", url: "/profile", icon: UserCircle },
   ];
 
