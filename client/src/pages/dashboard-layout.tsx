@@ -1,16 +1,48 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useAuth } from "@/hooks/use-auth";
-import { Terminal } from "lucide-react";
-import { useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ArrowLeft, Terminal } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Redirect } from "wouter";
+
+function DashboardHint({ visible, onDismiss }: { visible: boolean; onDismiss: () => void }) {
+  const { toggleSidebar } = useSidebar();
+
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        toggleSidebar();
+        onDismiss();
+      }}
+      className="ml-3 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary animate-pulse"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      Click here for Dashboard
+    </button>
+  );
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const isMobile = useIsMobile();
+  const [showDashboardHint, setShowDashboardHint] = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
+
+  const dismissDashboardHint = () => {
+    if (!isMobile || !showDashboardHint) {
+      return;
+    }
+    setShowDashboardHint(false);
+  };
 
   if (isLoading) {
     return (
@@ -30,7 +62,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <AppSidebar />
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
           <header className="flex items-center p-4 border-b-2 border-primary/20 bg-card/50 backdrop-blur-md sticky top-0 z-10">
-            <SidebarTrigger className="text-primary hover:bg-primary/20 hover:text-primary transition-colors p-2" />
+            <SidebarTrigger
+              className="text-primary hover:bg-primary/20 hover:text-primary transition-colors p-2"
+              onClick={dismissDashboardHint}
+            />
+            <DashboardHint visible={isMobile && showDashboardHint} onDismiss={dismissDashboardHint} />
             <div className="ml-4 font-display text-muted-foreground tracking-widest">
               STATUS: <span className="text-primary animate-pulse">ONLINE</span>
             </div>
