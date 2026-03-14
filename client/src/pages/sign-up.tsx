@@ -105,7 +105,18 @@ export default function SignUpPage() {
       });
 
       if (result?.status === "complete") {
-        await setActive?.({ session: result.createdSessionId });
+        const sessionId = result.createdSessionId || signUp.createdSessionId;
+        if (!sessionId) {
+          setErrorMessage("Unable to start your session. Please try again.");
+          return;
+        }
+
+        await setActive?.({ session: sessionId });
+        if (typeof window !== "undefined") {
+          window.location.assign("/projects");
+          return;
+        }
+
         setLocation("/projects", { replace: true });
         return;
       }
