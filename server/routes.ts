@@ -55,13 +55,14 @@ export async function registerRoutes(httpServer: Server, app: Express) {
 
     try {
       let email: string | null = null;
+      let dbUserId = userId;
 
-      const existing = await pool.query(
-        "SELECT email FROM users WHERE id=$1",
+      const existingById = await pool.query(
+        "SELECT id, email FROM users WHERE id=$1",
         [userId]
       );
 
-      email = existing.rows[0]?.email || null;
+      email = existingById.rows[0]?.email || null;
 
       if (!email) {
         const clerkUser = await clerkClient.users.getUser(userId);
@@ -72,7 +73,18 @@ export async function registerRoutes(httpServer: Server, app: Express) {
         return res.status(403).json({ message: "Use nitt webmail only" });
       }
 
-      req.user = { id: userId, email };
+      if (!existingById.rows[0] && email) {
+        const existingByEmail = await pool.query(
+          "SELECT id FROM users WHERE email=$1",
+          [email]
+        );
+
+        if (existingByEmail.rows[0]) {
+          dbUserId = existingByEmail.rows[0].id;
+        }
+      }
+
+      req.user = { id: dbUserId, email };
       next();
     } catch (error) {
       console.error("Auth check error:", error);

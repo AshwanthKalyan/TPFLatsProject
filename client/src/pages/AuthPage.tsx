@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { Show, SignInButton, SignUpButton, useClerk, useUser } from "@clerk/react";
 import { Redirect, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 const NITT_EMAIL_REGEX = /^[a-z0-9]+@nitt\.edu$/i;
 
@@ -13,6 +14,7 @@ function App() {
   const [, setLocation] = useLocation();
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
+  const { user: apiUser, isLoading: isApiLoading } = useAuth();
   const primaryEmail =
     user?.primaryEmailAddress?.emailAddress ||
     user?.emailAddresses?.[0]?.emailAddress ||
@@ -29,7 +31,11 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || isNitt) {
+    if (!isLoaded || !isSignedIn || isApiLoading) {
+      return;
+    }
+
+    if (isNitt && apiUser) {
       return;
     }
 
@@ -45,7 +51,7 @@ function App() {
     };
 
     void signOutAndRedirect();
-  }, [isLoaded, isSignedIn, isNitt, signOut, setLocation]);
+  }, [isLoaded, isSignedIn, isApiLoading, isNitt, apiUser, signOut, setLocation]);
 
   return (
     <header className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-black text-white">
@@ -105,7 +111,7 @@ function App() {
         </Show>
 
         <Show when="signed-in">
-          {isNitt ? <Redirect to="/projects" /> : null}
+          {isNitt && apiUser ? <Redirect to="/projects" /> : null}
         </Show>
       </div>
 
