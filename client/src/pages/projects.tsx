@@ -1,14 +1,27 @@
 import { useProjects, useCreateProject } from "@/hooks/use-projects";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Plus, Search, Terminal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Projects() {
   const { data: projects, isLoading, isError } = useProjects();
   const createProject = useCreateProject();
+  const [, setLocation] = useLocation();
 
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") === "1") {
+      setShowCreate(true);
+      setLocation("/projects", { replace: true });
+    }
+  }, [setLocation]);
 
   if (isLoading) {
     return (
