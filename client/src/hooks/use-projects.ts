@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthedFetch } from "@/lib/authed-fetch";
 
 /* ---------------- GET ALL PROJECTS ---------------- */
 export function useProjects() {
+  const authedFetch = useAuthedFetch();
   return useQuery({
     queryKey: ["/api/projects"],
     queryFn: async () => {
-      const res = await fetch("/api/projects", { credentials: "include" });
+      const res = await authedFetch("/api/projects");
       if (!res.ok) throw new Error("Failed to fetch projects");
       return res.json();
     },
@@ -14,10 +16,11 @@ export function useProjects() {
 
 /* ---------------- GET MY PROJECTS ---------------- */
 export function useMyProjects() {
+  const authedFetch = useAuthedFetch();
   return useQuery({
     queryKey: ["/api/my-projects"],
     queryFn: async () => {
-      const res = await fetch("/api/my-projects", { credentials: "include" });
+      const res = await authedFetch("/api/my-projects");
       if (!res.ok) throw new Error("Failed to fetch your projects");
       return res.json();
     },
@@ -26,10 +29,11 @@ export function useMyProjects() {
 
 /* ---------------- GET SINGLE PROJECT ---------------- */
 export function useProject(id: number) {
+  const authedFetch = useAuthedFetch();
   return useQuery({
     queryKey: ["/api/projects", id],
     queryFn: async () => {
-      const res = await fetch(`/api/projects/${id}`, { credentials: "include" });
+      const res = await authedFetch(`/api/projects/${id}`);
       if (!res.ok) throw new Error("Failed to fetch project");
       return res.json();
     },
@@ -40,11 +44,11 @@ export function useProject(id: number) {
 /* ---------------- CREATE PROJECT ---------------- */
 export function useCreateProject() {
   const queryClient = useQueryClient();
+  const authedFetch = useAuthedFetch();
   return useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch("/api/projects", {
+      const res = await authedFetch("/api/projects", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
@@ -58,11 +62,11 @@ export function useCreateProject() {
 /* ---------------- UPDATE PROJECT ---------------- */
 export function useUpdateProject() {
   const queryClient = useQueryClient();
+  const authedFetch = useAuthedFetch();
   return useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch(`/api/projects/${data.id}`, {
+      const res = await authedFetch(`/api/projects/${data.id}`, {
         method: "PATCH",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
@@ -79,9 +83,10 @@ export function useUpdateProject() {
 /* ---------------- DELETE PROJECT ---------------- */
 export function useDeleteProject() {
   const queryClient = useQueryClient();
+  const authedFetch = useAuthedFetch();
   return useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
+      const res = await authedFetch(`/api/projects/${id}`, { method: "DELETE" });
       const text = await res.text();
       return text ? JSON.parse(text) : {};
     },

@@ -17,6 +17,8 @@ export const authClerkAppearance = {
       "bg-cyan-400 text-black font-mono uppercase tracking-[0.3em] text-xs hover:bg-cyan-300",
     formFieldInput:
       "bg-black/60 border border-cyan-500/40 text-cyan-50 placeholder:text-cyan-200/40",
+    otpCodeFieldInput:
+      "bg-black/70 border border-green-400/70 text-green-300 shadow-[0_0_18px_rgba(0,255,128,0.35)] focus:border-green-300 focus:ring-2 focus:ring-green-400/40",
     socialButtonsBlockButton:
       "border border-cyan-400/40 text-cyan-50 hover:bg-cyan-400/10",
     dividerLine: "bg-cyan-400/30",
